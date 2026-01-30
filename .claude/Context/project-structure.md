@@ -32,7 +32,9 @@ App/
 │   ├── AppBootstrapper.swift     # Thin orchestrator (calls use cases, routes)
 │   ├── LaunchState.swift         # UI-agnostic state enum
 │   └── LaunchRouting.swift       # Protocol for coordinators
-└── (SceneDelegate at root creates bootstrapper)
+├── Navigation/
+│   └── AppRouter.swift            # Main router (coordinates auth guards + coordinator)
+└── (SceneDelegate at root creates bootstrapper + router)
 ```
 
 **Rule:** If you can delete it and the app still boots → Feature (goes in Features/).
@@ -136,6 +138,11 @@ Core/
 │   ├── Security/
 │   │   ├── UserSession.swift      # Session entity
 │   │   └── SessionRepository.swift # Protocol
+│   ├── Navigation/
+│   │   ├── Router.swift            # Navigation protocol
+│   │   ├── RouteResolver.swift     # URL → Route mapping protocol
+│   │   ├── RouteAccessControl.swift # Access control protocol
+│   │   └── DeepLinkHandler.swift   # Deep link protocol
 │   ├── Networking/
 │   │   └── HTTPClient.swift       # Protocol
 │   └── Persistence/
@@ -147,6 +154,9 @@ Core/
 │   ├── Security/
 │   │   ├── InMemorySessionRepository.swift  # Temporary
 │   │   └── KeychainSessionRepository.swift  # Production
+│   ├── Navigation/
+│   │   ├── UniversalLinkHandler.swift      # https://shell.app/... links
+│   │   └── CustomURLSchemeHandler.swift    # shell://... links
 │   ├── Networking/
 │   │   ├── URLSessionAdapter.swift
 │   │   └── Decorators/
@@ -156,6 +166,12 @@ Core/
 │   └── Persistence/
 │       ├── CoreDataStack.swift
 │       └── UserDefaultsStorage.swift
+│
+├── Navigation/                    # Type-safe routing (domain layer)
+│   ├── Route.swift                # Type-safe route enum (indirect)
+│   ├── RouteParameters.swift      # Parameter validation
+│   ├── DefaultRouteResolver.swift # URL → Route resolver
+│   └── AuthGuard.swift            # Session-based access control
 │
 ├── Coordinator/
 │   ├── Coordinator.swift          # Protocol + default implementation
