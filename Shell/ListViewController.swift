@@ -156,16 +156,6 @@ class ListViewController: UIViewController {
     @objc private func logoutTapped() {
         delegate?.listViewControllerDidRequestLogout(self)
     }
-
-    // MARK: - Navigation
-
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "showDetail",
-           let detailVC = segue.destination as? DetailViewController,
-           let indexPath = tableView.indexPathForSelectedRow {
-            detailVC.item = items[indexPath.row]
-        }
-    }
 }
 
 // MARK: - UITableViewDataSource
@@ -203,7 +193,8 @@ extension ListViewController: UITableViewDataSource {
 extension ListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        performSegue(withIdentifier: "showDetail", sender: self)
+        let item = items[indexPath.row]
+        delegate?.listViewController(self, didSelectItem: item)
     }
 
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {

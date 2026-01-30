@@ -192,7 +192,6 @@
                         <outlet property="emptyStateLabel" destination="empty-label" id="empty-label-outlet"/>
                         <outlet property="emptyStateView" destination="empty-state-view" id="empty-view-outlet"/>
                         <outlet property="tableView" destination="list-table" id="list-table-outlet"/>
-                        <segue destination="Detail-01" kind="show" identifier="showDetail" id="segue-list-to-detail"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="list-first-responder" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -203,7 +202,7 @@
         <!--Detail View Controller-->
         <scene sceneID="detail-scene">
             <objects>
-                <viewController id="Detail-01" customClass="DetailViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="DetailViewController" id="Detail-01" customClass="DetailViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="detail-view">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

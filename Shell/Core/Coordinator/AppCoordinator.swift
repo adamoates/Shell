@@ -17,6 +17,7 @@ protocol LoginViewControllerDelegate: AnyObject {
 /// Protocol for ListViewController to communicate with coordinator
 protocol ListViewControllerDelegate: AnyObject {
     func listViewControllerDidRequestLogout(_ controller: ListViewController)
+    func listViewController(_ controller: ListViewController, didSelectItem item: Item)
 }
 
 // MARK: - AppCoordinator
@@ -191,6 +192,23 @@ private extension AppCoordinator {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         return storyboard.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController
     }
+
+    @MainActor
+    func loadDetailViewController() -> DetailViewController? {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        return storyboard.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController
+    }
+
+    @MainActor
+    func showDetail(for item: Item, from controller: UIViewController) {
+        guard let detailVC = loadDetailViewController() else {
+            print("⚠️ AppCoordinator: Failed to load DetailViewController")
+            return
+        }
+
+        detailVC.item = item
+        navigationController.pushViewController(detailVC, animated: true)
+    }
 }
 
 // MARK: - LoginViewControllerDelegate
@@ -210,5 +228,10 @@ extension AppCoordinator: ListViewControllerDelegate {
         print("✅ AppCoordinator: Logout requested")
         // Route to unauthenticated state
         route(to: .unauthenticated)
+    }
+
+    func listViewController(_ controller: ListViewController, didSelectItem item: Item) {
+        print("✅ AppCoordinator: Item selected - \(item.title)")
+        showDetail(for: item, from: controller)
     }
 }
