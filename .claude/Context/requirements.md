@@ -107,11 +107,21 @@ This codebase should:
 
 ## Infrastructure Requirements
 
-### A) App Lifecycle & Boot
-- BootApp: Load config, construct DI graph, choose initial route
-- RestoreSession: Check auth token, restore user session
+### A) App Lifecycle & Boot (Orchestration)
+**IMPORTANT:** Boot is NOT a feature. It lives in `App/Boot/` as thin orchestration.
+
+**Boot Orchestration (App/Boot/):**
+- AppBootstrapper: Thin orchestrator that calls use cases and routes based on results
+- LaunchState: UI-agnostic state enum (authenticated/guest/locked/maintenance)
+- LaunchRouting: Protocol for coordinators to implement
+
+**Domain Use Cases (live in Features/):**
+- RestoreSession: Check auth token, restore user session (in Features/Auth/)
 - HandleAppStateTransitions: Foreground/background handling
-- Edge cases: Invalid config, expired tokens, keychain locked
+
+**Edge cases:** Invalid config, expired tokens, keychain locked
+
+**Rule:** If you can't delete it and still boot → App-level. If you can delete it → Feature.
 
 ### B) Navigation & Routing
 - Coordinator pattern for all navigation

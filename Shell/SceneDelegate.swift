@@ -10,13 +10,27 @@ import UIKit
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-
+    private var appCoordinator: AppCoordinator?
+    private var appBootstrapper: AppBootstrapper?
+    private let dependencyContainer = AppDependencyContainer()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+
+        // Create window
+        let window = UIWindow(windowScene: windowScene)
+        self.window = window
+
+        // Create coordinator and bootstrapper
+        let coordinator = dependencyContainer.makeAppCoordinator(window: window)
+        let bootstrapper = dependencyContainer.makeAppBootstrapper(router: coordinator)
+
+        appCoordinator = coordinator
+        appBootstrapper = bootstrapper
+
+        // Start boot sequence
+        // Bootstrapper will call coordinator.route(to:) when ready
+        bootstrapper.start()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
