@@ -25,6 +25,7 @@ class ListViewController: UIViewController {
 
     // MARK: - Properties
 
+    weak var delegate: ListViewControllerDelegate?
     var username: String?
     private var items: [Item] = []
     private var refreshControl: UIRefreshControl!
@@ -153,7 +154,7 @@ class ListViewController: UIViewController {
     }
 
     @objc private func logoutTapped() {
-        navigationController?.popViewController(animated: true)
+        delegate?.listViewControllerDidRequestLogout(self)
     }
 
     // MARK: - Navigation

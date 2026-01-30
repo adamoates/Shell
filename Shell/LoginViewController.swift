@@ -9,6 +9,10 @@ import UIKit
 
 class LoginViewController: UIViewController {
 
+    // MARK: - Properties
+
+    weak var delegate: LoginViewControllerDelegate?
+
     // MARK: - IBOutlets
 
     @IBOutlet weak var titleLabel: UILabel!
@@ -88,8 +92,10 @@ class LoginViewController: UIViewController {
             return
         }
 
-        // Success - navigate to list
-        performSegue(withIdentifier: "showList", sender: self)
+        // Success - notify coordinator
+        if let username = usernameTextField.text {
+            delegate?.loginViewController(self, didLoginWithUsername: username)
+        }
     }
 
     private func showError(_ message: String) {
@@ -103,14 +109,6 @@ class LoginViewController: UIViewController {
         errorLabel.alpha = 0
         UIView.animate(withDuration: 0.3) {
             self.errorLabel.alpha = 1
-        }
-    }
-
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "showList" {
-            if let listVC = segue.destination as? ListViewController {
-                listVC.username = usernameTextField.text
-            }
         }
     }
 }
