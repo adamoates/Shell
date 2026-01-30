@@ -7,6 +7,20 @@
 
 import UIKit
 
+// MARK: - ViewController Delegation Protocols
+
+/// Protocol for LoginViewController to communicate with coordinator
+protocol LoginViewControllerDelegate: AnyObject {
+    func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String)
+}
+
+/// Protocol for ListViewController to communicate with coordinator
+protocol ListViewControllerDelegate: AnyObject {
+    func listViewControllerDidRequestLogout(_ controller: ListViewController)
+}
+
+// MARK: - AppCoordinator
+
 /// Root coordinator for the entire application
 ///
 /// Responsibilities:
@@ -74,20 +88,34 @@ extension AppCoordinator: LaunchRouting {
 private extension AppCoordinator {
     @MainActor
     func showGuestFlow() {
-        let viewController = createPlaceholderViewController(
-            title: "Welcome",
-            message: "Guest mode - not authenticated"
-        )
-        navigationController.setViewControllers([viewController], animated: false)
+        guard let loginVC = loadLoginViewController() else {
+            // Fallback to placeholder if storyboard loading fails
+            let viewController = createPlaceholderViewController(
+                title: "Welcome",
+                message: "Guest mode - not authenticated"
+            )
+            navigationController.setViewControllers([viewController], animated: false)
+            return
+        }
+
+        loginVC.delegate = self
+        navigationController.setViewControllers([loginVC], animated: false)
     }
 
     @MainActor
     func showAuthenticatedFlow() {
-        let viewController = createPlaceholderViewController(
-            title: "Home",
-            message: "Authenticated - session valid"
-        )
-        navigationController.setViewControllers([viewController], animated: false)
+        guard let listVC = loadListViewController() else {
+            // Fallback to placeholder if storyboard loading fails
+            let viewController = createPlaceholderViewController(
+                title: "Home",
+                message: "Authenticated - session valid"
+            )
+            navigationController.setViewControllers([viewController], animated: false)
+            return
+        }
+
+        listVC.delegate = self
+        navigationController.setViewControllers([listVC], animated: false)
     }
 
     @MainActor
@@ -148,5 +176,39 @@ private extension AppCoordinator {
         ])
 
         return viewController
+    }
+
+    // MARK: - Storyboard Loading
+
+    @MainActor
+    func loadLoginViewController() -> LoginViewController? {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        return storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController
+    }
+
+    @MainActor
+    func loadListViewController() -> ListViewController? {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        return storyboard.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController
+    }
+}
+
+// MARK: - LoginViewControllerDelegate
+
+extension AppCoordinator: LoginViewControllerDelegate {
+    func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String) {
+        print("✅ AppCoordinator: Login completed for user: \(username)")
+        // Route to authenticated state
+        route(to: .authenticated)
+    }
+}
+
+// MARK: - ListViewControllerDelegate
+
+extension AppCoordinator: ListViewControllerDelegate {
+    func listViewControllerDidRequestLogout(_ controller: ListViewController) {
+        print("✅ AppCoordinator: Logout requested")
+        // Route to unauthenticated state
+        route(to: .unauthenticated)
     }
 }
