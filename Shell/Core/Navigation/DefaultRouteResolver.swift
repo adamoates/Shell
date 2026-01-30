@@ -11,8 +11,23 @@ import Foundation
 /// Handles both universal links (https://shell.app/...) and custom schemes (shell://...)
 final class DefaultRouteResolver: RouteResolver {
     func resolve(url: URL) -> Route? {
-        // Parse path components
-        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        // Parse path components (handle both HTTPS and custom schemes)
+        let pathComponents: [String]
+        if let scheme = url.scheme, scheme != "http", scheme != "https" {
+            // Custom scheme (e.g., shell://profile/user123)
+            // Host becomes first component, path components follow
+            var components: [String] = []
+            if let host = url.host {
+                components.append(host)
+            }
+            // Drop leading slash to avoid empty string
+            components.append(contentsOf: url.pathComponents.dropFirst())
+            pathComponents = components
+        } else {
+            // HTTPS/HTTP (e.g., https://shell.app/profile/user123)
+            // Drop leading slash and use path components
+            pathComponents = Array(url.pathComponents.dropFirst())
+        }
 
         guard let firstComponent = pathComponents.first else {
             // Root URL -> home
