@@ -1039,30 +1039,56 @@ animationView.play()
 
 ### Purpose
 
-**NOT a "profile app."** It's infrastructure demonstration.
+**NOT a "profile app."** It's infrastructure demonstration through Auth-related identity fields.
 
-### Module Structure
+### Architecture Location
 
+**FormEngine Infrastructure** (Core layer):
 ```
-Features/IdentitySandbox/
+Core/
+├── FormEngine/
+│   ├── Schema/
+│   │   ├── FormSchema.swift
+│   │   ├── FormField.swift
+│   │   ├── FormSection.swift
+│   │   ├── FieldID.swift
+│   │   └── ValidationRule.swift
+│   ├── Mapping/
+│   │   ├── FieldMapping.swift
+│   │   ├── FieldTransform.swift
+│   │   └── MappingError.swift
+│   ├── Validation/
+│   │   ├── ValidationStrategy.swift
+│   │   ├── FormValidator.swift
+│   │   └── ValidationResult.swift
+│   └── Rendering/
+│       ├── FormRenderer.swift (protocol)
+│       ├── FormViewModel.swift
+│       └── FormState.swift
+```
+
+**Identity Fields** (Auth feature, NOT standalone module):
+```
+Features/Auth/
 ├── Domain/
 │   ├── Entities/
+│   │   ├── UserSession.swift (already exists in Core/Contracts/)
 │   │   ├── ScreenName.swift
 │   │   ├── DateOfBirth.swift
 │   │   ├── AvatarAsset.swift
 │   │   └── IdentityProfile.swift
 │   ├── UseCases/
+│   │   ├── RestoreSessionUseCase.swift (already exists)
 │   │   ├── UpdateScreenNameUseCase.swift
 │   │   ├── UpdateDateOfBirthUseCase.swift
 │   │   ├── UpdateAvatarUseCase.swift
 │   │   └── SubmitIdentityProfileUseCase.swift
-│   ├── Repositories/
-│   │   ├── ScreenNameRepository.swift (protocol)
-│   │   └── ProfileRepository.swift (protocol)
-│   └── Strategies/
+│   ├── Repositories/ (protocols in Core/Contracts/)
+│   │   ├── ScreenNameRepository.swift
+│   │   └── ProfileRepository.swift
+│   └── Policies/
 │       ├── AgeEligibilityPolicy.swift
-│       ├── ScreenNamePolicy.swift
-│       └── ValidationStrategy.swift
+│       └── ScreenNamePolicy.swift
 ├── Data/
 │   ├── Repositories/
 │   │   ├── DefaultScreenNameRepository.swift
@@ -1070,32 +1096,47 @@ Features/IdentitySandbox/
 │   ├── DataSources/
 │   │   ├── RemoteScreenNameDataSource.swift
 │   │   └── MediaUploadDataSource.swift
-│   ├── DTOs/
-│   │   ├── ProfileCreationDTO.swift
-│   │   └── ScreenNameCheckDTO.swift
-│   └── Caching/
-│       ├── AvatarCacheManager.swift
-│       └── MediaCache.swift
+│   └── DTOs/
+│       ├── ProfileCreationDTO.swift
+│       └── ScreenNameCheckDTO.swift
 └── Presentation/
-    ├── ScreenNameStep/
-    │   ├── ScreenNameStepViewController.swift
-    │   ├── ScreenNameStepViewModel.swift
-    │   └── ScreenNameSuggestionView.swift
-    ├── BirthdayStep/
-    │   ├── BirthdayStepViewController.swift
-    │   └── BirthdayStepViewModel.swift
-    ├── AvatarStep/
-    │   ├── AvatarStepViewController.swift
-    │   ├── AvatarStepViewModel.swift
-    │   └── ImagePickerCoordinator.swift
-    ├── ReviewStep/
-    │   ├── ReviewStepViewController.swift
-    │   └── ReviewStepViewModel.swift
-    ├── IneligibleScreen/
-    │   └── IneligibleViewController.swift
-    └── Coordinator/
+    ├── IdentityFlow/  (uses FormEngine from Core/)
+    │   ├── ScreenNameStep/
+    │   │   ├── ScreenNameStepViewController.swift
+    │   │   ├── ScreenNameStepViewModel.swift
+    │   │   └── ScreenNameSuggestionView.swift
+    │   ├── BirthdayStep/
+    │   │   ├── BirthdayStepViewController.swift
+    │   │   └── BirthdayStepViewModel.swift
+    │   ├── AvatarStep/
+    │   │   ├── AvatarStepViewController.swift
+    │   │   ├── AvatarStepViewModel.swift
+    │   │   └── ImagePickerCoordinator.swift
+    │   ├── ReviewStep/
+    │   │   ├── ReviewStepViewController.swift
+    │   │   └── ReviewStepViewModel.swift
+    │   └── IneligibleScreen/
+    │       └── IneligibleViewController.swift
+    └── Coordinators/
         └── IdentityFlowCoordinator.swift
 ```
+
+**Core/Infrastructure** (platform implementations):
+```
+Core/Infrastructure/
+├── Media/
+│   ├── AvatarCacheManager.swift
+│   └── DefaultMediaCache.swift
+└── FormEngine/
+    ├── UIKitFormRenderer.swift
+    └── SwiftUIFormRenderer.swift
+```
+
+**Key Architectural Notes**:
+- FormEngine lives in `Core/` as feature-agnostic infrastructure
+- Identity fields belong to Auth feature (not standalone "IdentitySandbox")
+- Repository protocols in `Core/Contracts/`, implementations in `Features/Auth/Data/`
+- This demonstrates FormEngine through real Auth use case
 
 ### Screens
 

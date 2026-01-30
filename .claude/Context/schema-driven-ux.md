@@ -726,8 +726,11 @@ FormField(
 
 ## 5) Minimal "Ultimate" Components
 
-### Domain Layer
+### Core/FormEngine/Schema/ (Domain Layer)
 ```swift
+// Location: Core/FormEngine/Schema/
+// Purpose: Domain-driven schema definition (what forms ARE)
+
 // Schema definition (pure data)
 struct FormSchema { }
 struct FormField { }
@@ -746,6 +749,12 @@ enum ValidationRule {
     case regex(String)
     case custom((String) -> Bool)
 }
+```
+
+### Core/FormEngine/Mapping/ (Domain Layer)
+```swift
+// Location: Core/FormEngine/Mapping/
+// Purpose: Define how UI maps to domain models
 
 // Field mapping protocol
 protocol FieldMapping {
@@ -753,15 +762,33 @@ protocol FieldMapping {
     func map(from: [FieldID: String]) throws -> DomainModel
 }
 
-// Use case
-protocol SubmitFormUseCase {
-    func execute<T>(_ model: T) async throws -> FormResponse
+// Transform strategies
+protocol FieldTransform {
+    func transform(_ input: String) -> String
 }
 ```
 
-### Data Layer
+### Core/FormEngine/Validation/ (Domain Layer)
 ```swift
-// Form endpoint client
+// Location: Core/FormEngine/Validation/
+// Purpose: Validation engine
+
+protocol ValidationStrategy {
+    func validate(field: FormField, value: String) -> ValidationResult
+}
+
+final class FormValidator {
+    func validate(field: FieldID) -> Bool
+    func validateAll() -> Bool
+}
+```
+
+### Core/Contracts/ (Protocols)
+```swift
+// Location: Core/Contracts/FormEngine/
+// Purpose: Abstractions for infrastructure
+
+// Form submission (network boundary)
 protocol FormSubmissionClient {
     func submit(endpoint: String, data: Data) async throws -> FormResponse
 }
@@ -780,9 +807,12 @@ protocol SecureFieldStorage {
 }
 ```
 
-### Presentation Layer
+### Core/FormEngine/Rendering/ (Presentation Layer)
 ```swift
-// ViewModel
+// Location: Core/FormEngine/Rendering/
+// Purpose: Platform-agnostic form state management
+
+// ViewModel (platform-agnostic)
 final class FormViewModel: ObservableObject {
     @Published var formState: FormState
     @Published var fieldErrors: [FieldID: String]
@@ -793,21 +823,41 @@ final class FormViewModel: ObservableObject {
     func submit() async
 }
 
-// Renderer (UIKit and SwiftUI versions)
+// Renderer protocol (platform boundary)
 protocol FormRenderer {
     func render(schema: FormSchema)
     func update(field: FieldID, value: String)
     func showErrors(_ errors: [FieldID: String])
     func setLoading(_ isLoading: Bool)
 }
+```
 
-final class UIKitFormRenderer: FormRenderer { }
-final class SwiftUIFormRenderer: FormRenderer { }
+### Core/Infrastructure/FormEngine/ (Platform Implementations)
+```swift
+// Location: Core/Infrastructure/FormEngine/
+// Purpose: Platform-specific rendering
 
-// Coordinator
+final class UIKitFormRenderer: FormRenderer {
+    // UIKit implementation
+}
+
+final class SwiftUIFormRenderer: FormRenderer {
+    // SwiftUI implementation
+}
+```
+
+### Features/*/Presentation/Coordinators/ (Feature Layer)
+```swift
+// Location: Features/Auth/Presentation/Coordinators/
+// Purpose: Feature-specific flow control
+
 protocol FormFlowCoordinator: AnyObject {
     func formDidSubmit(result: FormSubmissionResult)
     func formDidCancel()
+}
+
+final class IdentityFlowCoordinator: FormFlowCoordinator {
+    // Auth-specific routing
 }
 ```
 
@@ -983,9 +1033,36 @@ func testProgressiveDisclosure_UI() {
 
 ## 7) Shell App Implementation
 
-### "Sandbox" Feature Module
+### Architecture Location
 
-The Shell demonstrates the Form Engine through a **Sandbox** feature:
+**FormEngine Infrastructure** (lives in `Core/`, NOT `Shared/` or `Features/`):
+```
+Core/
+└── FormEngine/
+    ├── Schema/          (FormSchema, FormField, FieldID, ValidationRule)
+    ├── Mapping/         (FieldMapping, FieldTransform)
+    ├── Validation/      (ValidationStrategy, FormValidator)
+    └── Rendering/       (FormRenderer protocol, FormViewModel)
+
+Core/Infrastructure/
+└── FormEngine/
+    ├── UIKitFormRenderer.swift    (platform implementation)
+    └── SwiftUIFormRenderer.swift  (platform implementation)
+```
+
+**Why Core/**:
+- FormEngine is feature-agnostic infrastructure
+- Used across multiple features (Auth, Profile, Settings, etc.)
+- Domain owns the abstractions (Core/FormEngine/)
+- Infrastructure provides platform adapters (Core/Infrastructure/FormEngine/)
+
+**Litmus Test**: "Can we delete this and still boot?"
+- FormEngine → YES (feature uses it, but app boots without it) → Core infrastructure
+- AppBootstrapper → NO (app won't boot without it) → App/Boot/
+
+### "Sandbox" Demonstration Through Auth Feature
+
+The Shell demonstrates the Form Engine through **Auth-related identity fields** (NOT a standalone "IdentitySandbox" module):
 
 **Screen 1: Dynamic Form Playground**
 ```swift
