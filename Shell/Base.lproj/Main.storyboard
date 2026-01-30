@@ -28,7 +28,7 @@
         <!--Login View Controller-->
         <scene sceneID="login-scene">
             <objects>
-                <viewController id="Login-01" customClass="LoginViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="LoginViewController" id="Login-01" customClass="LoginViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="login-view">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -107,7 +107,7 @@
         <!--List View Controller-->
         <scene sceneID="list-scene">
             <objects>
-                <viewController id="List-01" customClass="ListViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ListViewController" id="List-01" customClass="ListViewController" customModule="Shell" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="list-view">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
