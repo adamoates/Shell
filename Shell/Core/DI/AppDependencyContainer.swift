@@ -24,6 +24,18 @@ final class AppDependencyContainer {
     /// Session state must be shared across the app
     private lazy var sharedSessionRepository: SessionRepository = InMemorySessionRepository()
 
+    // MARK: - Boot Factory
+
+    /// Create the app bootstrapper
+    /// - Parameter router: The launch router (typically AppCoordinator)
+    /// - Returns: Configured bootstrapper
+    func makeAppBootstrapper(router: LaunchRouting) -> AppBootstrapper {
+        AppBootstrapper(
+            restoreSession: makeRestoreSessionUseCase(),
+            router: router
+        )
+    }
+
     // MARK: - Coordinator Factory
 
     /// Create the root app coordinator
@@ -31,27 +43,24 @@ final class AppDependencyContainer {
     /// - Returns: Configured app coordinator
     func makeAppCoordinator(window: UIWindow) -> AppCoordinator {
         let navigationController = UINavigationController()
-        let bootUseCase = makeBootAppUseCase()
 
         return AppCoordinator(
             window: window,
-            navigationController: navigationController,
-            bootUseCase: bootUseCase
+            navigationController: navigationController
         )
     }
 
     // MARK: - Use Case Factory
 
-    /// Create a BootApp use case
-    /// - Returns: New instance of BootAppUseCase
-    func makeBootAppUseCase() -> BootAppUseCase {
-        DefaultBootAppUseCase(
-            configLoader: makeConfigLoader(),
+    /// Create a RestoreSession use case
+    /// - Returns: New instance of RestoreSessionUseCase
+    func makeRestoreSessionUseCase() -> RestoreSessionUseCase {
+        DefaultRestoreSessionUseCase(
             sessionRepository: makeSessionRepository()
         )
     }
 
-    // MARK: - Data Layer Factory
+    // MARK: - Infrastructure Factory
 
     /// Create a config loader
     /// - Returns: New instance of ConfigLoader

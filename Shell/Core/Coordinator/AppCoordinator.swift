@@ -10,10 +10,10 @@ import UIKit
 /// Root coordinator for the entire application
 ///
 /// Responsibilities:
-/// - Boot the application
-/// - Determine initial route (guest vs authenticated)
+/// - Route based on launch state (implements LaunchRouting)
 /// - Manage global navigation state
 /// - Handle deep links
+/// - Own child coordinators for features
 final class AppCoordinator: Coordinator {
     // MARK: - Properties
 
@@ -22,85 +22,103 @@ final class AppCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
 
     private let window: UIWindow
-    private let bootUseCase: BootAppUseCase
 
     // MARK: - Initialization
 
     init(
         window: UIWindow,
-        navigationController: UINavigationController,
-        bootUseCase: BootAppUseCase
+        navigationController: UINavigationController
     ) {
         self.window = window
         self.navigationController = navigationController
-        self.bootUseCase = bootUseCase
     }
 
     // MARK: - Coordinator
 
     func start() {
-        Task { @MainActor in
-            await boot()
-        }
+        // AppCoordinator is started via LaunchRouting.route(to:)
+        // Called by AppBootstrapper after boot completes
     }
 
     func finish() {
         // App coordinator doesn't finish
     }
+}
 
-    // MARK: - Private
+// MARK: - LaunchRouting
 
-    @MainActor
-    private func boot() async {
-        do {
-            let result = try await bootUseCase.execute()
-            showInitialFlow(for: result)
-        } catch {
-            showErrorState(error)
+extension AppCoordinator: LaunchRouting {
+    func route(to state: LaunchState) {
+        Task { @MainActor in
+            switch state {
+            case .authenticated:
+                showAuthenticatedFlow()
+            case .unauthenticated:
+                showGuestFlow()
+            case .locked:
+                showLockedFlow()
+            case .maintenance:
+                showMaintenanceFlow()
+            case .failure(let message):
+                showErrorState(message: message)
+            }
+
+            window.rootViewController = navigationController
+            window.makeKeyAndVisible()
         }
     }
+}
 
+// MARK: - Private Navigation
+
+private extension AppCoordinator {
     @MainActor
-    private func showInitialFlow(for result: BootResult) {
-        switch result.initialRoute {
-        case .authenticated:
-            showAuthenticatedFlow()
-        case .guest:
-            showGuestFlow()
-        }
-
-        window.rootViewController = navigationController
-        window.makeKeyAndVisible()
-    }
-
-    @MainActor
-    private func showGuestFlow() {
-        // For now, show a simple placeholder view controller
-        let viewController = createPlaceholderViewController(title: "Welcome")
-        navigationController.setViewControllers([viewController], animated: false)
-    }
-
-    @MainActor
-    private func showAuthenticatedFlow() {
-        // For now, show a simple placeholder view controller
-        let viewController = createPlaceholderViewController(title: "Home")
-        navigationController.setViewControllers([viewController], animated: false)
-    }
-
-    @MainActor
-    private func showErrorState(_ error: Error) {
+    func showGuestFlow() {
         let viewController = createPlaceholderViewController(
-            title: "Error",
-            message: "Failed to boot: \(error.localizedDescription)"
+            title: "Welcome",
+            message: "Guest mode - not authenticated"
         )
         navigationController.setViewControllers([viewController], animated: false)
-
-        window.rootViewController = navigationController
-        window.makeKeyAndVisible()
     }
 
     @MainActor
-    private func createPlaceholderViewController(
+    func showAuthenticatedFlow() {
+        let viewController = createPlaceholderViewController(
+            title: "Home",
+            message: "Authenticated - session valid"
+        )
+        navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    @MainActor
+    func showLockedFlow() {
+        let viewController = createPlaceholderViewController(
+            title: "Locked",
+            message: "Session locked - biometric unlock required"
+        )
+        navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    @MainActor
+    func showMaintenanceFlow() {
+        let viewController = createPlaceholderViewController(
+            title: "Maintenance",
+            message: "App is currently under maintenance"
+        )
+        navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    @MainActor
+    func showErrorState(message: String) {
+        let viewController = createPlaceholderViewController(
+            title: "Error",
+            message: "Boot failed: \(message)"
+        )
+        navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    @MainActor
+    func createPlaceholderViewController(
         title: String,
         message: String? = nil
     ) -> UIViewController {

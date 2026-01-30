@@ -11,6 +11,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
     private var appCoordinator: AppCoordinator?
+    private var appBootstrapper: AppBootstrapper?
     private let dependencyContainer = AppDependencyContainer()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -20,10 +21,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
 
-        // Create and start app coordinator
+        // Create coordinator and bootstrapper
         let coordinator = dependencyContainer.makeAppCoordinator(window: window)
+        let bootstrapper = dependencyContainer.makeAppBootstrapper(router: coordinator)
+
         appCoordinator = coordinator
-        coordinator.start()
+        appBootstrapper = bootstrapper
+
+        // Start boot sequence
+        // Bootstrapper will call coordinator.route(to:) when ready
+        bootstrapper.start()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
