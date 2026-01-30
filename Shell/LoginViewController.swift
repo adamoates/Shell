@@ -6,12 +6,15 @@
 //
 
 import UIKit
+import Combine
 
 class LoginViewController: UIViewController {
 
     // MARK: - Properties
 
     weak var delegate: LoginViewControllerDelegate?
+    var viewModel: LoginViewModel!
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - IBOutlets
 
@@ -28,6 +31,7 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupAccessibility()
+        setupBindings()
     }
 
     // MARK: - Setup
@@ -66,36 +70,32 @@ class LoginViewController: UIViewController {
         errorLabel.accessibilityLabel = "Error message"
     }
 
+    private func setupBindings() {
+        // Set view model delegate
+        viewModel.delegate = self
+
+        // Bind error message from ViewModel
+        viewModel.$errorMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] errorMessage in
+                if let errorMessage = errorMessage {
+                    self?.showError(errorMessage)
+                } else {
+                    self?.errorLabel.isHidden = true
+                }
+            }
+            .store(in: &cancellables)
+    }
+
     // MARK: - Actions
 
     @IBAction func loginButtonTapped(_ sender: UIButton) {
-        errorLabel.isHidden = true
+        // Sync text fields to view model
+        viewModel.username = usernameTextField.text ?? ""
+        viewModel.password = passwordTextField.text ?? ""
 
-        guard let username = usernameTextField.text, !username.isEmpty else {
-            showError("Please enter a username")
-            return
-        }
-
-        guard let password = passwordTextField.text, !password.isEmpty else {
-            showError("Please enter a password")
-            return
-        }
-
-        // Simple validation for demo
-        if username.count < 3 {
-            showError("Username must be at least 3 characters")
-            return
-        }
-
-        if password.count < 6 {
-            showError("Password must be at least 6 characters")
-            return
-        }
-
-        // Success - notify coordinator
-        if let username = usernameTextField.text {
-            delegate?.loginViewController(self, didLoginWithUsername: username)
-        }
+        // Let view model handle validation and login
+        viewModel.login()
     }
 
     private func showError(_ message: String) {
@@ -110,6 +110,15 @@ class LoginViewController: UIViewController {
         UIView.animate(withDuration: 0.3) {
             self.errorLabel.alpha = 1
         }
+    }
+}
+
+// MARK: - LoginViewModelDelegate
+
+extension LoginViewController: LoginViewModelDelegate {
+    func loginViewModelDidSucceed(_ viewModel: LoginViewModel, username: String) {
+        // Notify coordinator of successful login
+        delegate?.loginViewController(self, didLoginWithUsername: username)
     }
 }
 

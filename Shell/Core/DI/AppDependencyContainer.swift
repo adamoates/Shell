@@ -46,8 +46,26 @@ final class AppDependencyContainer {
 
         return AppCoordinator(
             window: window,
-            navigationController: navigationController
+            navigationController: navigationController,
+            dependencyContainer: self
         )
+    }
+
+    /// Create an auth coordinator
+    /// - Parameter navigationController: The navigation controller to use
+    /// - Returns: Configured auth coordinator
+    func makeAuthCoordinator(navigationController: UINavigationController) -> AuthCoordinator {
+        AuthCoordinator(
+            navigationController: navigationController,
+            validateCredentials: makeValidateCredentialsUseCase()
+        )
+    }
+
+    /// Create an items coordinator
+    /// - Parameter navigationController: The navigation controller to use
+    /// - Returns: Configured items coordinator
+    func makeItemsCoordinator(navigationController: UINavigationController) -> ItemsCoordinator {
+        ItemsCoordinator(navigationController: navigationController)
     }
 
     // MARK: - Navigation Factory
@@ -96,6 +114,12 @@ final class AppDependencyContainer {
         DefaultRestoreSessionUseCase(
             sessionRepository: makeSessionRepository()
         )
+    }
+
+    /// Create a ValidateCredentials use case
+    /// - Returns: New instance of ValidateCredentialsUseCase
+    func makeValidateCredentialsUseCase() -> ValidateCredentialsUseCase {
+        DefaultValidateCredentialsUseCase()
     }
 
     // MARK: - Infrastructure Factory

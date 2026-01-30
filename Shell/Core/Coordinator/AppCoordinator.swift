@@ -22,15 +22,18 @@ final class AppCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
 
     private let window: UIWindow
+    private let dependencyContainer: AppDependencyContainer
 
     // MARK: - Initialization
 
     init(
         window: UIWindow,
-        navigationController: UINavigationController
+        navigationController: UINavigationController,
+        dependencyContainer: AppDependencyContainer
     ) {
         self.window = window
         self.navigationController = navigationController
+        self.dependencyContainer = dependencyContainer
     }
 
     // MARK: - Coordinator
@@ -77,8 +80,8 @@ private extension AppCoordinator {
         // Remove any existing child coordinators
         removeAllChildCoordinators()
 
-        // Create and start AuthCoordinator
-        let authCoordinator = AuthCoordinator(navigationController: navigationController)
+        // Create and start AuthCoordinator via DI container
+        let authCoordinator = dependencyContainer.makeAuthCoordinator(navigationController: navigationController)
         authCoordinator.delegate = self
         addChild(authCoordinator)
         authCoordinator.start()
@@ -89,8 +92,8 @@ private extension AppCoordinator {
         // Remove any existing child coordinators
         removeAllChildCoordinators()
 
-        // Create and start ItemsCoordinator
-        let itemsCoordinator = ItemsCoordinator(navigationController: navigationController)
+        // Create and start ItemsCoordinator via DI container
+        let itemsCoordinator = dependencyContainer.makeItemsCoordinator(navigationController: navigationController)
         itemsCoordinator.delegate = self
         addChild(itemsCoordinator)
         itemsCoordinator.start()

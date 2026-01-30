@@ -31,10 +31,16 @@ final class AuthCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     weak var delegate: AuthCoordinatorDelegate?
 
+    private let validateCredentials: ValidateCredentialsUseCase
+
     // MARK: - Initialization
 
-    init(navigationController: UINavigationController) {
+    init(
+        navigationController: UINavigationController,
+        validateCredentials: ValidateCredentialsUseCase
+    ) {
         self.navigationController = navigationController
+        self.validateCredentials = validateCredentials
     }
 
     // MARK: - Coordinator
@@ -56,7 +62,11 @@ final class AuthCoordinator: Coordinator {
             return
         }
 
+        // Create and inject ViewModel
+        let viewModel = LoginViewModel(validateCredentials: validateCredentials)
+        loginVC.viewModel = viewModel
         loginVC.delegate = self
+
         navigationController.setViewControllers([loginVC], animated: false)
     }
 
