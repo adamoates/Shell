@@ -50,6 +50,44 @@ final class AppDependencyContainer {
         )
     }
 
+    // MARK: - Navigation Factory
+
+    /// Create the app router
+    /// - Parameter coordinator: The app coordinator
+    /// - Returns: Configured app router
+    func makeAppRouter(coordinator: AppCoordinator) -> Router {
+        AppRouter(
+            coordinator: coordinator,
+            accessControl: makeAuthGuard()
+        )
+    }
+
+    /// Create an auth guard for route access control
+    /// - Returns: Configured auth guard
+    func makeAuthGuard() -> RouteAccessControl {
+        AuthGuard(
+            sessionRepository: makeSessionRepository()
+        )
+    }
+
+    /// Create a route resolver
+    /// - Returns: Configured route resolver
+    func makeRouteResolver() -> RouteResolver {
+        DefaultRouteResolver()
+    }
+
+    /// Create deep link handlers
+    /// - Parameter router: The app router
+    /// - Returns: Array of configured deep link handlers
+    func makeDeepLinkHandlers(router: Router) -> [DeepLinkHandler] {
+        let resolver = makeRouteResolver()
+
+        return [
+            UniversalLinkHandler(routeResolver: resolver, router: router),
+            CustomURLSchemeHandler(routeResolver: resolver, router: router)
+        ]
+    }
+
     // MARK: - Use Case Factory
 
     /// Create a RestoreSession use case

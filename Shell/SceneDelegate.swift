@@ -12,6 +12,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private var appCoordinator: AppCoordinator?
     private var appBootstrapper: AppBootstrapper?
+    private var appRouter: Router?
+    private var deepLinkHandlers: [DeepLinkHandler] = []
     private let dependencyContainer = AppDependencyContainer()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -21,16 +23,47 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
 
-        // Create coordinator and bootstrapper
+        // Create coordinator, router, and bootstrapper
         let coordinator = dependencyContainer.makeAppCoordinator(window: window)
+        let router = dependencyContainer.makeAppRouter(coordinator: coordinator)
         let bootstrapper = dependencyContainer.makeAppBootstrapper(router: coordinator)
 
         appCoordinator = coordinator
+        appRouter = router
         appBootstrapper = bootstrapper
+
+        // Create deep link handlers
+        deepLinkHandlers = dependencyContainer.makeDeepLinkHandlers(router: router)
 
         // Start boot sequence
         // Bootstrapper will call coordinator.route(to:) when ready
         bootstrapper.start()
+
+        // Handle deep links from initial launch (if any)
+        if let urlContext = connectionOptions.urlContexts.first {
+            handleDeepLink(urlContext.url)
+        }
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        // Handle deep links when app is already running
+        guard let url = URLContexts.first?.url else { return }
+        handleDeepLink(url)
+    }
+
+    // MARK: - Deep Link Handling
+
+    private func handleDeepLink(_ url: URL) {
+        print("🔗 SceneDelegate: Handling deep link: \(url)")
+
+        for handler in deepLinkHandlers {
+            if handler.handle(url: url) {
+                print("✅ SceneDelegate: Deep link handled by \(type(of: handler))")
+                return
+            }
+        }
+
+        print("⚠️ SceneDelegate: No handler could process URL: \(url)")
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
