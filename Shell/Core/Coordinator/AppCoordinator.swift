@@ -7,28 +7,13 @@
 
 import UIKit
 
-// MARK: - ViewController Delegation Protocols
-
-/// Protocol for LoginViewController to communicate with coordinator
-protocol LoginViewControllerDelegate: AnyObject {
-    func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String)
-}
-
-/// Protocol for ListViewController to communicate with coordinator
-protocol ListViewControllerDelegate: AnyObject {
-    func listViewControllerDidRequestLogout(_ controller: ListViewController)
-    func listViewController(_ controller: ListViewController, didSelectItem item: Item)
-}
-
-// MARK: - AppCoordinator
-
 /// Root coordinator for the entire application
 ///
 /// Responsibilities:
 /// - Route based on launch state (implements LaunchRouting)
 /// - Manage global navigation state
 /// - Handle deep links
-/// - Own child coordinators for features
+/// - Own and delegate to child coordinators for features
 final class AppCoordinator: Coordinator {
     // MARK: - Properties
 
@@ -89,34 +74,26 @@ extension AppCoordinator: LaunchRouting {
 private extension AppCoordinator {
     @MainActor
     func showGuestFlow() {
-        guard let loginVC = loadLoginViewController() else {
-            // Fallback to placeholder if storyboard loading fails
-            let viewController = createPlaceholderViewController(
-                title: "Welcome",
-                message: "Guest mode - not authenticated"
-            )
-            navigationController.setViewControllers([viewController], animated: false)
-            return
-        }
+        // Remove any existing child coordinators
+        removeAllChildCoordinators()
 
-        loginVC.delegate = self
-        navigationController.setViewControllers([loginVC], animated: false)
+        // Create and start AuthCoordinator
+        let authCoordinator = AuthCoordinator(navigationController: navigationController)
+        authCoordinator.delegate = self
+        addChild(authCoordinator)
+        authCoordinator.start()
     }
 
     @MainActor
     func showAuthenticatedFlow() {
-        guard let listVC = loadListViewController() else {
-            // Fallback to placeholder if storyboard loading fails
-            let viewController = createPlaceholderViewController(
-                title: "Home",
-                message: "Authenticated - session valid"
-            )
-            navigationController.setViewControllers([viewController], animated: false)
-            return
-        }
+        // Remove any existing child coordinators
+        removeAllChildCoordinators()
 
-        listVC.delegate = self
-        navigationController.setViewControllers([listVC], animated: false)
+        // Create and start ItemsCoordinator
+        let itemsCoordinator = ItemsCoordinator(navigationController: navigationController)
+        itemsCoordinator.delegate = self
+        addChild(itemsCoordinator)
+        itemsCoordinator.start()
     }
 
     @MainActor
@@ -179,59 +156,40 @@ private extension AppCoordinator {
         return viewController
     }
 
-    // MARK: - Storyboard Loading
+    // MARK: - Child Coordinator Management
 
-    @MainActor
-    func loadLoginViewController() -> LoginViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController
+    func addChild(_ coordinator: Coordinator) {
+        guard !childCoordinators.contains(where: { $0 === coordinator }) else { return }
+        childCoordinators.append(coordinator)
+        coordinator.parentCoordinator = self
     }
 
-    @MainActor
-    func loadListViewController() -> ListViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController
+    func removeChild(_ coordinator: Coordinator) {
+        childCoordinators.removeAll { $0 === coordinator }
     }
 
-    @MainActor
-    func loadDetailViewController() -> DetailViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController
-    }
-
-    @MainActor
-    func showDetail(for item: Item, from controller: UIViewController) {
-        guard let detailVC = loadDetailViewController() else {
-            print("⚠️ AppCoordinator: Failed to load DetailViewController")
-            return
-        }
-
-        detailVC.item = item
-        navigationController.pushViewController(detailVC, animated: true)
+    func removeAllChildCoordinators() {
+        childCoordinators.forEach { $0.finish() }
+        childCoordinators.removeAll()
     }
 }
 
-// MARK: - LoginViewControllerDelegate
+// MARK: - AuthCoordinatorDelegate
 
-extension AppCoordinator: LoginViewControllerDelegate {
-    func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String) {
+extension AppCoordinator: AuthCoordinatorDelegate {
+    func authCoordinatorDidCompleteLogin(_ coordinator: AuthCoordinator, username: String) {
         print("✅ AppCoordinator: Login completed for user: \(username)")
         // Route to authenticated state
         route(to: .authenticated)
     }
 }
 
-// MARK: - ListViewControllerDelegate
+// MARK: - ItemsCoordinatorDelegate
 
-extension AppCoordinator: ListViewControllerDelegate {
-    func listViewControllerDidRequestLogout(_ controller: ListViewController) {
+extension AppCoordinator: ItemsCoordinatorDelegate {
+    func itemsCoordinatorDidRequestLogout(_ coordinator: ItemsCoordinator) {
         print("✅ AppCoordinator: Logout requested")
         // Route to unauthenticated state
         route(to: .unauthenticated)
-    }
-
-    func listViewController(_ controller: ListViewController, didSelectItem item: Item) {
-        print("✅ AppCoordinator: Item selected - \(item.title)")
-        showDetail(for: item, from: controller)
     }
 }
