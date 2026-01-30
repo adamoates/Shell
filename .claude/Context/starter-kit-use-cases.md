@@ -708,6 +708,203 @@ func testPreventLeaks_noRetainCyclesInClosures()
 
 ---
 
+### I) Schema-Driven Forms (Killer Feature)
+
+#### 21. RenderFormFromSchema
+**Purpose**: Generate UI from form schema
+**Responsibility**: Dynamic form rendering without hardcoded screens
+
+**Input**:
+- FormSchema (sections, fields, validation rules)
+- FieldMapping (UI → Domain)
+
+**Output**:
+- Rendered form UI (UIKit or SwiftUI)
+- Editable field states
+
+**Flow**:
+```swift
+1. Parse FormSchema
+2. Generate UI fields dynamically
+3. Apply visibility rules (progressive disclosure)
+4. Configure validation strategies
+5. Set up field-to-field behavior
+6. Render accessible, keyboard-friendly UI
+```
+
+**Edge Cases**:
+- ❌ Complex visibility rules → Evaluate dependencies correctly
+- ❌ Circular field dependencies → Detect and prevent
+- ❌ Dynamic schema updates → Re-render affected fields only
+- ❌ Accessibility with dynamic fields → Maintain VoiceOver order
+
+**Tests**:
+```swift
+func testRenderFormFromSchema_generatesCorrectFieldCount()
+func testRenderFormFromSchema_appliesVisibilityRules()
+func testRenderFormFromSchema_configuresAccessibility()
+func testRenderFormFromSchema_handlesInvalidSchema()
+```
+
+---
+
+#### 22. ValidateFormFields
+**Purpose**: Validate form fields using strategy pattern
+**Responsibility**: Execute validation rules, provide user-friendly errors
+
+**Input**:
+- FieldID and value
+- ValidationRules (required, email, minLength, etc.)
+- ValidationMode (live, onBlur, onSubmit)
+
+**Output**:
+- ValidationResult (valid/invalid with error message)
+- Field error state
+
+**Flow**:
+```swift
+1. Determine when to validate (mode)
+2. Apply validation rules to field value
+3. Execute cross-field validation if needed
+4. Map errors to user-friendly messages
+5. Update field error state
+6. Emit validation events
+```
+
+**Edge Cases**:
+- ❌ Cross-field validation (password match) → Access other fields
+- ❌ Async validation (username availability) → Handle loading state
+- ❌ Validation during typing → Debounce to avoid noise
+- ❌ Multiple validation errors → Show priority error first
+
+**Tests**:
+```swift
+func testValidateFormFields_emailRule_rejectsInvalid()
+func testValidateFormFields_passwordMatch_detectsMismatch()
+func testValidateFormFields_required_rejectsEmpty()
+func testValidateFormFields_asyncValidation_handlesLoading()
+```
+
+---
+
+#### 23. MapFieldsToDomain
+**Purpose**: Transform raw UI values to domain models
+**Responsibility**: Apply transformations, normalize input, parse types
+
+**Input**:
+- Raw field values ([FieldID: String])
+- FieldMapping definition
+
+**Output**:
+- Domain model or DTO
+- MappingError if transformation fails
+
+**Flow**:
+```swift
+1. Extract raw values from UI
+2. Apply transformations (trim, lowercase, strip formatting)
+3. Parse types (String → Date, String → Decimal)
+4. Construct domain model
+5. Validate domain constraints
+6. Return typed model or throw error
+```
+
+**Edge Cases**:
+- ❌ Missing required fields → Throw MappingError.missingField
+- ❌ Parsing failures (invalid date) → Throw MappingError.invalidFormat
+- ❌ Multiple transformations → Apply in correct order
+- ❌ Sensitive field logging → Redact in error messages
+
+**Tests**:
+```swift
+func testMapFieldsToDomain_normalizesEmail()
+func testMapFieldsToDomain_stripsPhoneFormatting()
+func testMapFieldsToDomain_parsesDateCorrectly()
+func testMapFieldsToDomain_missingField_throwsError()
+func testMapFieldsToDomain_redactsSensitiveData()
+```
+
+---
+
+#### 24. SubmitFormData
+**Purpose**: Submit validated and mapped form data
+**Responsibility**: Execute submission use case, handle responses
+
+**Input**:
+- Mapped domain model
+- Submission endpoint
+- Auth context
+
+**Output**:
+- FormResponse (success, MFA required, additional info needed)
+- Error if submission fails
+
+**Flow**:
+```swift
+1. Validate all fields
+2. Map to domain model
+3. Execute SubmitFormUseCase
+4. Handle response variants:
+   - Success → Navigate to next screen
+   - MFA Required → Show MFA screen
+   - Additional Info → Show additional form
+   - Error → Display error
+```
+
+**Edge Cases**:
+- ❌ Network error during submission → Allow retry
+- ❌ Submission in progress → Disable submit button
+- ❌ Concurrent submissions → Single-flight pattern
+- ❌ Response requires different flow → Route via Coordinator
+
+**Tests**:
+```swift
+func testSubmitFormData_success_navigatesToNextScreen()
+func testSubmitFormData_mfaRequired_showsMFAScreen()
+func testSubmitFormData_networkError_allowsRetry()
+func testSubmitFormData_concurrentSubmits_onlyOneInFlight()
+```
+
+---
+
+#### 25. ApplyProgressiveDisclosure
+**Purpose**: Show/hide fields based on user input
+**Responsibility**: Evaluate visibility rules, update UI dynamically
+
+**Input**:
+- Visibility rules per field
+- Current field values
+
+**Output**:
+- Updated set of visible fields
+- Re-rendered UI
+
+**Flow**:
+```swift
+1. User updates field (e.g., accountType = "Business")
+2. Evaluate visibility rules for all fields
+3. Determine which fields should be visible
+4. Animate field appearance/disappearance
+5. Update form state
+6. Maintain accessibility focus order
+```
+
+**Edge Cases**:
+- ❌ Dependent field has value when hidden → Clear value
+- ❌ Multiple dependencies → Evaluate all rules
+- ❌ Circular dependencies → Detect and prevent
+- ❌ Accessibility focus when field disappears → Move to next visible
+
+**Tests**:
+```swift
+func testProgressiveDisclosure_showsFieldWhenRuleMet()
+func testProgressiveDisclosure_hidesFieldWhenRuleNotMet()
+func testProgressiveDisclosure_clearsHiddenFieldValue()
+func testProgressiveDisclosure_detectsCircularDependencies()
+```
+
+---
+
 ## Design Pattern Coverage
 
 The Shell starter kit demonstrates ALL key patterns:
@@ -804,6 +1001,14 @@ The tightest scope that still screams "senior":
    - Integration tests (networking, persistence)
    - UI test (launch → initial route)
 
+8. ✅ **Schema-Driven Form Engine** (Killer Feature)
+   - FormSchema definitions
+   - Dynamic field rendering (UIKit + SwiftUI)
+   - FieldMapping (UI → Domain with transformations)
+   - Validation strategies
+   - Progressive disclosure (conditional fields)
+   - Flow routing based on responses
+
 ---
 
 ## Implementation Order
@@ -839,6 +1044,15 @@ The tightest scope that still screams "senior":
 - Measure critical paths
 - Leak detection
 - Performance tests
+
+### Phase 7: Schema-Driven Forms (test/13-form-engine)
+- FormSchema data structures
+- FormViewModel (MVVM)
+- FormRenderer (UIKit + SwiftUI)
+- Validation strategies
+- FieldMapping implementations
+- Progressive disclosure
+- Form Sandbox UI
 
 ---
 
