@@ -22,75 +22,96 @@ You can drop any product (Notes, Tasks, Shopping, etc.) into this foundation lat
 
 ### A) App Lifecycle & Boot
 
-#### 1. BootApp
-**Purpose**: Initialize app on launch
-**Responsibility**: Set up dependency graph, load configuration, choose initial route
+**CRITICAL DISTINCTION:**
+- **Boot Orchestration** (App/Boot/): Thin, calls use cases, maps results, routes
+- **Domain Use Cases** (Features/*/Domain/UseCases/): Real business logic
+
+#### 1. AppBootstrapper (ORCHESTRATION, not a use case)
+**Location**: `App/Boot/AppBootstrapper.swift`
+**Purpose**: Thin orchestrator that wires boot sequence
+**Responsibility**: Call use cases, map results to LaunchState, ask coordinator to route
+
+**NOT responsible for**: Business logic, network calls, persistence
 
 **Input**:
-- Launch options (deep link, notification, etc.)
-- Environment (debug/release/testing)
+- RestoreSessionUseCase (injected)
+- LaunchRouting (coordinator)
 
 **Output**:
-- Configured AppDependencies
-- Initial Coordinator to start
+- Calls `router.route(to: LaunchState)`
 
 **Flow**:
 ```swift
-1. Load environment configuration
-2. Initialize feature flags
-3. Construct DI container (composition root)
-4. Determine initial route (auth vs main vs onboarding)
-5. Start appropriate coordinator
+1. Call restoreSessionUseCase.execute()
+2. Map SessionStatus → LaunchState (trivial mapping only!)
+3. Ask router.route(to: launchState)
 ```
 
-**Edge Cases**:
-- ❌ Missing/invalid config → Use safe defaults, log error
-- ❌ Feature flags unavailable → Use hardcoded defaults
-- ❌ DI graph invalid → Fail fast in debug, safe fallback in release
-- ❌ Crash during previous launch → Show recovery UI
+**Rule**: AppBootstrapper must be < 60 lines. If it grows, you're doing business logic → extract to use case.
 
-**Tests**:
+**Tests** (with Fakes/Spies):
 ```swift
-func testBootApp_whenConfigValid_startsMainCoordinator()
-func testBootApp_whenConfigInvalid_usesDefaults()
-func testBootApp_whenNoSession_startsAuthCoordinator()
-func testBootApp_withDeepLink_queuesUntilReady()
+func testStart_whenSessionAuthenticated_routesToAuthenticated()
+func testStart_whenSessionUnauthenticated_routesToUnauthenticated()
+func testStart_invokesRestoreSessionExactlyOnce()
+```
+
+**Fake/Spy Example**:
+```swift
+final class RestoreSessionUseCaseFake: RestoreSessionUseCase {
+    private let status: SessionStatus
+    func execute() async -> SessionStatus { return status }
+}
+
+final class LaunchRouterSpy: LaunchRouting {
+    private(set) var routedStates: [LaunchState] = []
+    func route(to state: LaunchState) { routedStates.append(state) }
+}
 ```
 
 ---
 
-#### 2. RestoreSession
+#### 2. RestoreSessionUseCase (REAL USE CASE)
+**Location**: `Features/Auth/Domain/UseCases/RestoreSessionUseCase.swift`
 **Purpose**: Restore user session state on app launch
-**Responsibility**: Check for valid auth token, determine app state
+**Responsibility**: Check for valid auth token, validate expiry, return SessionStatus
 
 **Input**:
-- Keychain (auth token storage)
-- Secure storage (user preferences)
+- SessionRepository (protocol from Core/Contracts/Security/)
 
 **Output**:
-- AppState: `.authenticated(user)`, `.guest`, or `.locked`
+- SessionStatus: `.authenticated`, `.unauthenticated`, or `.locked`
 
 **Flow**:
 ```swift
-1. Check keychain for auth token
-2. If token exists, validate expiry
-3. If valid, restore user session
-4. If invalid/missing, start as guest
-5. Emit app state for UI
+1. Get current session from repository
+2. If no session → return .unauthenticated
+3. If session exists, validate expiry (business rule)
+4. If expired → clear session, return .unauthenticated
+5. If valid → return .authenticated
 ```
 
 **Edge Cases**:
-- ❌ Token present but expired → Auto-refresh or force logout
-- ❌ Token corrupt/unreadable → Clear and start fresh
-- ❌ Keychain inaccessible (device locked) → Show locked UI
-- ❌ Multiple concurrent restore attempts → Single-flight pattern
+- ❌ Token expired → Clear session, return .unauthenticated
+- ❌ Repository throws → Catch, return .unauthenticated (safe fallback)
+- ❌ Session corrupt → Clear and start fresh
 
-**Tests**:
+**Tests** (with Fakes):
 ```swift
-func testRestoreSession_whenTokenValid_restoresUser()
-func testRestoreSession_whenTokenExpired_startsRefresh()
-func testRestoreSession_whenTokenMissing_startsAsGuest()
-func testRestoreSession_whenKeychainLocked_showsLockedState()
+func testExecute_whenNoSession_returnsUnauthenticated()
+func testExecute_whenSessionValid_returnsAuthenticated()
+func testExecute_whenSessionExpired_returnsUnauthenticatedAndClearsSession()
+func testExecute_whenRepositoryThrows_returnsUnauthenticated()
+```
+
+**Fake Example**:
+```swift
+final class SessionRepositoryFake: SessionRepository {
+    var stubbedSession: UserSession?
+    func getCurrentSession() async throws -> UserSession? {
+        return stubbedSession
+    }
+}
 ```
 
 ---

@@ -22,20 +22,21 @@ Docs/                          # Documentation
 
 ### App/ Directory
 
-Application-level concerns: entry point, composition root, coordinators.
+Application-level concerns: **orchestration** (NOT features).
+
+**CRITICAL:** Boot is orchestration, not a feature. It lives here, not in Features/.
 
 ```
 App/
-├── AppDelegate.swift          # App lifecycle
-├── SceneDelegate.swift        # Scene lifecycle
-├── CompositionRoot/
-│   ├── AppDependencies.swift  # DI container (wiring)
-│   ├── AppCoordinator.swift   # Root coordinator
-│   └── ViewControllerFactory.swift
-└── Configuration/
-    ├── Environment.swift       # Environment config (dev/staging/prod)
-    └── FeatureFlags.swift     # Feature toggle system
+├── Boot/
+│   ├── AppBootstrapper.swift     # Thin orchestrator (calls use cases, routes)
+│   ├── LaunchState.swift         # UI-agnostic state enum
+│   └── LaunchRouting.swift       # Protocol for coordinators
+└── (SceneDelegate at root creates bootstrapper)
 ```
+
+**Rule:** If you can delete it and the app still boots → Feature (goes in Features/).
+If you can't boot without it → App-level orchestration (goes here).
 
 ### Features/ Directory
 
@@ -119,75 +120,64 @@ Features/
     └── Presentation/
 ```
 
-### Shared/ Directory
+### Core/ Directory
 
-Reusable infrastructure and utilities.
+**CRITICAL:** Domain owns abstractions (protocols). Infrastructure implements them.
+
+**Rule:** Protocols defining "what the app needs" → Core/Contracts/
+Implementations of those protocols → Core/Infrastructure/
 
 ```
-Shared/
-├── Networking/
-│   ├── HTTPClient.swift (protocol)
-│   ├── URLSessionAdapter.swift
-│   ├── Decorators/
-│   │   ├── AuthenticatedHTTPClient.swift
-│   │   ├── LoggingHTTPClient.swift
-│   │   └── RetryHTTPClient.swift
-│   ├── Models/
-│   │   ├── HTTPRequest.swift
-│   │   ├── HTTPResponse.swift
-│   │   └── HTTPError.swift
-│   └── Strategies/
-│       ├── RetryStrategy.swift
-│       └── ExponentialBackoffStrategy.swift
+Core/
+├── Contracts/                     # Protocols defining needs (domain-owned)
+│   ├── Configuration/
+│   │   ├── AppConfig.swift        # Config entity
+│   │   └── ConfigLoader.swift     # Protocol
+│   ├── Security/
+│   │   ├── UserSession.swift      # Session entity
+│   │   └── SessionRepository.swift # Protocol
+│   ├── Networking/
+│   │   └── HTTPClient.swift       # Protocol
+│   └── Persistence/
+│       └── Cache.swift            # Protocol
 │
-├── Persistence/
-│   ├── CoreData/
-│   │   ├── CoreDataStack.swift
-│   │   ├── Shell.xcdatamodeld
-│   │   ├── ManagedObjectModels/
-│   │   │   ├── NoteManagedObject+CoreDataClass.swift
-│   │   │   └── NoteManagedObject+CoreDataProperties.swift
-│   │   └── Migrations/
-│   │       └── ModelVersion1to2Migration.swift
-│   └── UserDefaults/
+├── Infrastructure/                # Platform implementations
+│   ├── Configuration/
+│   │   └── DefaultConfigLoader.swift
+│   ├── Security/
+│   │   ├── InMemorySessionRepository.swift  # Temporary
+│   │   └── KeychainSessionRepository.swift  # Production
+│   ├── Networking/
+│   │   ├── URLSessionAdapter.swift
+│   │   └── Decorators/
+│   │       ├── AuthenticatedHTTPClient.swift
+│   │       ├── LoggingHTTPClient.swift
+│   │       └── RetryHTTPClient.swift
+│   └── Persistence/
+│       ├── CoreDataStack.swift
 │       └── UserDefaultsStorage.swift
 │
-├── Security/
-│   ├── SecureStorage.swift (Facade)
-│   ├── KeychainWrapper.swift
-│   ├── BiometricAuthentication.swift
-│   └── TokenManager.swift
+├── Coordinator/
+│   ├── Coordinator.swift          # Protocol + default implementation
+│   └── AppCoordinator.swift       # Root coordinator (implements LaunchRouting)
 │
-├── Utilities/
-│   ├── Extensions/
-│   │   ├── String+Extensions.swift
-│   │   ├── Date+Extensions.swift
-│   │   └── UIView+Extensions.swift
-│   ├── Helpers/
-│   │   ├── IDGenerator.swift
-│   │   ├── Clock.swift
-│   │   └── Logger.swift
-│   └── Protocols/
-│       └── Coordinator.swift
+├── DI/
+│   └── AppDependencyContainer.swift # Composition root (ONLY place concretes are created)
 │
-└── TestsSupport/
-    ├── Mocks/
-    │   ├── MockNoteRepository.swift
-    │   ├── MockHTTPClient.swift
-    │   └── MockAuthRepository.swift
-    ├── Stubs/
-    │   ├── StubURLProtocol.swift
-    │   └── StubNoteDataSource.swift
-    ├── Fakes/
-    │   ├── FakeNoteRepository.swift
-    │   └── FakeCoreDataStack.swift
-    ├── Builders/
-    │   ├── Note+TestBuilder.swift
-    │   └── User+TestBuilder.swift
-    └── Utilities/
-        ├── XCTestCase+Async.swift
-        └── NSPersistentContainer+InMemory.swift
+└── Utilities/
+    ├── Extensions/
+    │   ├── String+Extensions.swift
+    │   ├── Date+Extensions.swift
+    │   └── UIView+Extensions.swift
+    └── Helpers/
+        ├── IDGenerator.swift
+        └── Logger.swift
 ```
+
+**Why this structure:**
+- Contracts define "what" → testable, mockable
+- Infrastructure provides "how" → swappable implementations
+- Domain owns the abstractions, Infrastructure adapts to them
 
 ### Resources/ Directory
 
