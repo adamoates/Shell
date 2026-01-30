@@ -17,35 +17,56 @@ Assume this code will be reviewed by staff+ engineers.
 
 ## App Concept (FIXED)
 
-**App**: Shell / Field Notes
-**Flow**: Login (mock) → Notes List → Note Detail → Create/Edit
-**Requirements**:
-- Offline support
-- Caching
-- Secure auth token
-- Full testability
+**The Shell is NOT a Notes app. It's an Ultimate Starter Kit.**
 
-This app must evolve incrementally across branches without architectural drift.
+**Purpose**: Feature-agnostic infrastructure that demonstrates senior-level iOS patterns through platform concerns, not business logic.
+
+**What this means**:
+- We build infrastructure use cases: BootApp, HandleDeepLink, RefreshToken, SecureStore
+- NOT business use cases: CreateNote, FetchTasks
+- The Shell IS the product — a foundation you can drop any feature into later
+
+**Core Infrastructure**:
+1. App lifecycle & boot (BootApp, RestoreSession, HandleAppStateTransitions)
+2. Coordinator routing (including deep link handling)
+3. Generic APIClient with decorators (auth, retry, logging)
+4. SecureStore (Keychain) + BiometricGate
+5. Cache with TTL + CoreDataStack facade
+6. Debug diagnostics screen + repro tools
+7. Comprehensive test harness (unit, integration, UI)
+
+**Requirements**:
+- Production-ready patterns
+- Every boundary is protocol-driven
+- Composition root wires everything
+- Complete test coverage
+- Zero technical debt
+
+This starter kit must be feature-agnostic and evolve incrementally across branches without architectural drift.
+
+**See [starter-kit-use-cases.md](starter-kit-use-cases.md) for complete use case catalog.**
 
 ## UI Strategy (MANDATORY)
 
-### UIKit-First Approach
-- **Login**: Storyboard + Auto Layout
-- **Notes List + Detail**: Programmatic UIKit
-  - UICollectionView with diffable data source
-  - Compositional layout
-  - Custom cells and layouts
+### Demonstrate Both UI Frameworks
 
-### SwiftUI Module
-- One feature (e.g., Note Editor or Explore tab)
+**UIKit** (Storyboard + Programmatic):
+- Storyboard example: Simple auth/onboarding screen
+- Programmatic example: Diagnostics screen, state-driven UI
+- Modern patterns: Diffable data sources, compositional layouts
+
+**SwiftUI**:
+- One infrastructure feature (e.g., Debug Diagnostics or Settings)
 - Embedded via Coordinator / UIHostingController
-- Proper data flow with Combine or async/await
+- Proper state management with ObservableObject
+- Combine or async/await data flow
 
-### Rules
-- Coordinator owns ALL navigation
-- UI layers contain NO business logic
-- ViewModels handle presentation logic only
+### Architecture Rules
+- **Coordinator owns ALL navigation** (UIKit and SwiftUI)
+- UI layers contain **NO business logic**
+- ViewModels handle **presentation logic only**
 - No fat ViewControllers
+- Every screen demonstrates MVVM pattern
 
 ## Core Principles
 
@@ -84,55 +105,69 @@ This codebase should:
 - Survive refactors
 - Pass staff-level code review
 
-## Feature Requirements
+## Infrastructure Requirements
 
-### Authentication
-- Mock login (local validation)
-- Secure token storage (Keychain)
-- Biometric authentication option
-- Token refresh simulation
-- Logout with proper cleanup
+### A) App Lifecycle & Boot
+- BootApp: Load config, construct DI graph, choose initial route
+- RestoreSession: Check auth token, restore user session
+- HandleAppStateTransitions: Foreground/background handling
+- Edge cases: Invalid config, expired tokens, keychain locked
 
-### Notes Management
-- Create, read, update, delete notes
-- Offline-first architecture
-- Sync indicator
-- Search and filter
-- Categories/tags
+### B) Navigation & Routing
+- Coordinator pattern for all navigation
+- Deep link / universal link handling
+- Typed Route enum with parameter validation
+- Global UI presentation (errors, loading, modals)
+- Edge cases: Unknown routes, rapid navigation, auth-required routes
 
-### Data Persistence
-- Core Data for local storage
-- Repository pattern for data access
-- Background context for writes
-- Migration support
+### C) Application State
+- Single source of truth for app state (authenticated/guest/locked)
+- Observable state changes (Combine or async/await)
+- State-driven UI rendering
+- Edge cases: Background thread updates, state thrashing
 
-### Networking
-- REST API simulation
-- Retry logic with exponential backoff
-- Request/response logging
-- Error mapping
+### D) Networking Foundation
+- Generic HTTPClient protocol
+- URLSessionAdapter
+- Decorators: Authentication, Retry, Logging
+- Token refresh with single-flight pattern
+- Typed error mapping
 - Cancellation support
+- Edge cases: 204 No Content, decoding errors, rate limiting, concurrent 401s
 
-### Performance
-- Smooth 60fps scrolling
-- Efficient image loading (if applicable)
-- Background task optimization
-- Memory leak prevention
-- Instruments profiling
+### E) Persistence Foundation
+- Core Data stack facade
+- Background context handling
+- Merge policies and migrations
+- Generic cache with TTL expiration
+- Edge cases: Disk full, corrupted data, migration failures
 
-### Security
-- Keychain for sensitive data
-- Biometric authentication
-- Certificate pinning discussion
+### F) Security
+- SecureStore (Keychain adapter)
+- BiometricGate (Face ID / Touch ID)
+- Token management (storage, refresh, expiry)
 - No secrets in logs
-- Data protection classes
+- Edge cases: Keychain locked, biometric lockout, no enrollment
 
-### Accessibility
-- VoiceOver support
-- Dynamic Type
+### G) Observability & Diagnostics
+- Structured logging (no secrets)
+- Debug diagnostics screen (app state, cache, network, flags)
+- Repro tools (simulate offline, expired token, crashes, constraint warnings)
+- Edge cases: Redact sensitive data, debug-only features
+
+### H) Performance
+- Measure critical paths (launch time, screen render, API response)
+- Memory leak prevention (coordinator/ViewModel lifecycle)
+- Smooth 60fps rendering
+- Instruments profiling (Time Profiler, Allocations, Leaks)
+- Edge cases: Retain cycles, main-thread blocking
+
+### I) Accessibility (Built-in)
+- VoiceOver support on all screens
+- Dynamic Type scaling
 - Minimum touch targets (44x44)
 - Color contrast compliance
-- Semantic content
+- Semantic content structure
 
 ## Acceptance Criteria
 
