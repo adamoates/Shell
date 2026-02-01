@@ -10,6 +10,7 @@ import XCTest
 
 /// Tests for AppBootstrapper
 /// Following TDD with clean test doubles (Fakes and Spies)
+@MainActor
 final class AppBootstrapperTests: XCTestCase {
 
     // MARK: - Test Doubles
@@ -141,3 +142,4 @@ final class AppBootstrapperTests: XCTestCase {
         XCTAssertEqual(router.routedStates.count, 1, "Should route exactly once")
     }
 }
+

@@ -57,25 +57,12 @@ final class AuthCoordinator: Coordinator {
 
     @MainActor
     private func showLogin() {
-        guard let loginVC = loadLoginViewController() else {
-            print("⚠️ AuthCoordinator: Failed to load LoginViewController")
-            return
-        }
-
         // Create and inject ViewModel
         let viewModel = LoginViewModel(validateCredentials: validateCredentials)
-        loginVC.viewModel = viewModel
+        let loginVC = LoginViewController(viewModel: viewModel)
         loginVC.delegate = self
 
         navigationController.setViewControllers([loginVC], animated: false)
-    }
-
-    // MARK: - Storyboard Loading
-
-    @MainActor
-    private func loadLoginViewController() -> LoginViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "LoginViewController") as? LoginViewController
     }
 }
 

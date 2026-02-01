@@ -24,6 +24,9 @@ final class AppCoordinator: Coordinator {
     private let window: UIWindow
     private let dependencyContainer: AppDependencyContainer
 
+    /// Route to restore after successful authentication
+    private var pendingRoute: Route?
+
     // MARK: - Initialization
 
     init(
@@ -34,6 +37,9 @@ final class AppCoordinator: Coordinator {
         self.window = window
         self.navigationController = navigationController
         self.dependencyContainer = dependencyContainer
+
+        // Observe Universal Link notifications
+        setupUniversalLinkObserver()
     }
 
     // MARK: - Coordinator
@@ -45,6 +51,95 @@ final class AppCoordinator: Coordinator {
 
     func finish() {
         // App coordinator doesn't finish
+    }
+
+    // MARK: - Pending Route Management
+
+    /// Save a route to restore after authentication
+    /// - Parameter route: The route that was denied due to lack of authentication
+    func saveIntendedRoute(_ route: Route) {
+        print("💾 AppCoordinator: Saving intended route: \(route.description)")
+        pendingRoute = route
+    }
+
+    /// Get and clear the pending route
+    /// - Returns: The saved route, if any
+    func restorePendingRoute() -> Route? {
+        guard let route = pendingRoute else {
+            return nil
+        }
+
+        print("📍 AppCoordinator: Restoring pending route: \(route.description)")
+        pendingRoute = nil
+        return route
+    }
+
+    /// Clear the pending route without restoring it
+    func clearPendingRoute() {
+        if pendingRoute != nil {
+            print("🗑️  AppCoordinator: Clearing pending route")
+            pendingRoute = nil
+        }
+    }
+
+    // MARK: - Profile Navigation
+
+    /// Show profile for a user
+    /// - Parameter userID: The user's ID
+    func showProfile(userID: String) {
+        Task { @MainActor in
+            let profileCoordinator = dependencyContainer.makeProfileCoordinator(
+                navigationController: navigationController,
+                userID: userID
+            )
+            addChild(profileCoordinator)
+            profileCoordinator.start()
+        }
+    }
+
+    /// Show identity setup flow
+    /// - Parameter startStep: Optional starting step
+    func showIdentitySetup(startStep: IdentityStep? = nil) {
+        Task { @MainActor in
+            // TODO: Get actual userID from session
+            let userID = "current_user"  // Placeholder
+
+            let identityCoordinator = dependencyContainer.makeIdentitySetupCoordinator(
+                navigationController: navigationController,
+                userID: userID,
+                startStep: startStep
+            )
+            identityCoordinator.delegate = self
+            addChild(identityCoordinator)
+            identityCoordinator.start()
+        }
+    }
+
+    // MARK: - Universal Links
+
+    /// Setup observer for Universal Link notifications
+    private func setupUniversalLinkObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleUniversalLinkNotification(_:)),
+            name: .handleUniversalLink,
+            object: nil
+        )
+    }
+
+    /// Handle Universal Link notification from SceneDelegate
+    /// - Parameter notification: Notification containing the URL in userInfo
+    @objc private func handleUniversalLinkNotification(_ notification: Notification) {
+        guard let url = notification.userInfo?["url"] as? URL else {
+            print("⚠️ AppCoordinator: No URL in Universal Link notification")
+            return
+        }
+
+        print("🔗 AppCoordinator: Processing Universal Link: \(url)")
+
+        // Create router to handle the URL
+        let router = dependencyContainer.makeAppRouter(coordinator: self)
+        router.navigate(to: url)
     }
 }
 
@@ -182,8 +277,17 @@ private extension AppCoordinator {
 extension AppCoordinator: AuthCoordinatorDelegate {
     func authCoordinatorDidCompleteLogin(_ coordinator: AuthCoordinator, username: String) {
         print("✅ AppCoordinator: Login completed for user: \(username)")
-        // Route to authenticated state
-        route(to: .authenticated)
+
+        // Check for pending route to restore
+        if let pendingRoute = restorePendingRoute() {
+            print("📍 AppCoordinator: Navigating to restored route: \(pendingRoute.description)")
+            // Create router to navigate to the pending route
+            let router = dependencyContainer.makeAppRouter(coordinator: self)
+            router.navigate(to: pendingRoute)
+        } else {
+            // No pending route, go to default authenticated state
+            route(to: .authenticated)
+        }
     }
 }
 
@@ -192,7 +296,48 @@ extension AppCoordinator: AuthCoordinatorDelegate {
 extension AppCoordinator: ItemsCoordinatorDelegate {
     func itemsCoordinatorDidRequestLogout(_ coordinator: ItemsCoordinator) {
         print("✅ AppCoordinator: Logout requested")
+        // Clear any pending route on logout
+        clearPendingRoute()
         // Route to unauthenticated state
+        route(to: .unauthenticated)
+    }
+
+    func itemsCoordinatorDidRequestIdentitySetup(_ coordinator: ItemsCoordinator) {
+        print("✅ AppCoordinator: Identity setup requested")
+        // Navigate to identity setup flow
+        showIdentitySetup()
+    }
+
+    func itemsCoordinatorDidRequestProfile(_ coordinator: ItemsCoordinator) {
+        print("✅ AppCoordinator: Profile view requested")
+        // TODO: Get actual userID from session
+        // For now, use a test userID
+        showProfile(userID: "current_user")
+    }
+}
+
+// MARK: - IdentitySetupCoordinatorDelegate
+
+extension AppCoordinator: IdentitySetupCoordinatorDelegate {
+    func identitySetupCoordinatorDidComplete(_ coordinator: IdentitySetupCoordinator, profile: UserProfile) {
+        print("✅ AppCoordinator: Identity setup completed for user: \(profile.userID)")
+
+        // Check for pending route to restore
+        if let pendingRoute = restorePendingRoute() {
+            print("📍 AppCoordinator: Navigating to restored route: \(pendingRoute.description)")
+            // Create router to navigate to the pending route
+            let router = dependencyContainer.makeAppRouter(coordinator: self)
+            router.navigate(to: pendingRoute)
+        } else {
+            // No pending route, go to default authenticated state
+            route(to: .authenticated)
+        }
+    }
+
+    func identitySetupCoordinatorDidCancel(_ coordinator: IdentitySetupCoordinator) {
+        print("⚠️ AppCoordinator: Identity setup cancelled")
+        // User cancelled identity setup, return to login
+        clearPendingRoute()
         route(to: .unauthenticated)
     }
 }

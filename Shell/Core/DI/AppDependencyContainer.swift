@@ -24,6 +24,28 @@ final class AppDependencyContainer {
     /// Session state must be shared across the app
     private lazy var sharedSessionRepository: SessionRepository = InMemorySessionRepository()
 
+    /// Shared user profile repository (singleton pattern)
+    /// Profile data must be shared across the app
+    /// Uses feature flag to switch between in-memory and remote implementation
+    private lazy var sharedUserProfileRepository: UserProfileRepository = {
+        if RepositoryConfig.useRemoteRepository {
+            // Use remote repository with HTTP client
+            let httpClient = URLSessionHTTPClient()
+            return RemoteUserProfileRepository(
+                httpClient: httpClient,
+                baseURL: APIConfig.current.baseURL,
+                authToken: APIConfig.current.authToken
+            )
+        } else {
+            // Use in-memory repository for offline development
+            return InMemoryUserProfileRepository()
+        }
+    }()
+
+    /// Shared items repository (singleton pattern)
+    /// Items data must be shared across the app
+    private lazy var sharedItemsRepository: ItemsRepository = InMemoryItemsRepository()
+
     // MARK: - Boot Factory
 
     /// Create the app bootstrapper
@@ -65,7 +87,45 @@ final class AppDependencyContainer {
     /// - Parameter navigationController: The navigation controller to use
     /// - Returns: Configured items coordinator
     func makeItemsCoordinator(navigationController: UINavigationController) -> ItemsCoordinator {
-        ItemsCoordinator(navigationController: navigationController)
+        ItemsCoordinator(
+            navigationController: navigationController,
+            fetchItems: makeFetchItemsUseCase(),
+            createItem: makeCreateItemUseCase(),
+            updateItem: makeUpdateItemUseCase(),
+            deleteItem: makeDeleteItemUseCase()
+        )
+    }
+
+    /// Create a profile coordinator
+    /// - Parameters:
+    ///   - navigationController: The navigation controller to use
+    ///   - userID: The user's ID
+    /// - Returns: Configured profile coordinator
+    func makeProfileCoordinator(navigationController: UINavigationController, userID: String) -> ProfileCoordinator {
+        ProfileCoordinator(
+            navigationController: navigationController,
+            userID: userID,
+            fetchProfile: makeFetchProfileUseCase()
+        )
+    }
+
+    /// Create an identity setup coordinator
+    /// - Parameters:
+    ///   - navigationController: The navigation controller to use
+    ///   - userID: The user's ID
+    ///   - startStep: Optional starting step
+    /// - Returns: Configured identity setup coordinator
+    func makeIdentitySetupCoordinator(
+        navigationController: UINavigationController,
+        userID: String,
+        startStep: IdentityStep? = nil
+    ) -> IdentitySetupCoordinator {
+        IdentitySetupCoordinator(
+            navigationController: navigationController,
+            userID: userID,
+            completeIdentitySetup: makeCompleteIdentitySetupUseCase(),
+            startStep: startStep
+        )
     }
 
     // MARK: - Navigation Factory
@@ -76,7 +136,8 @@ final class AppDependencyContainer {
     func makeAppRouter(coordinator: AppCoordinator) -> Router {
         AppRouter(
             coordinator: coordinator,
-            accessControl: makeAuthGuard()
+            accessControl: makeAuthGuard(),
+            routeResolver: makeRouteResolver()
         )
     }
 
@@ -122,6 +183,46 @@ final class AppDependencyContainer {
         DefaultValidateCredentialsUseCase()
     }
 
+    /// Create a FetchItems use case
+    /// - Returns: New instance of FetchItemsUseCase
+    func makeFetchItemsUseCase() -> FetchItemsUseCase {
+        DefaultFetchItemsUseCase(repository: makeItemsRepository())
+    }
+
+    /// Create a CreateItem use case
+    /// - Returns: New instance of CreateItemUseCase
+    func makeCreateItemUseCase() -> CreateItemUseCase {
+        DefaultCreateItemUseCase(repository: makeItemsRepository())
+    }
+
+    /// Create an UpdateItem use case
+    /// - Returns: New instance of UpdateItemUseCase
+    func makeUpdateItemUseCase() -> UpdateItemUseCase {
+        DefaultUpdateItemUseCase(repository: makeItemsRepository())
+    }
+
+    /// Create a DeleteItem use case
+    /// - Returns: New instance of DeleteItemUseCase
+    func makeDeleteItemUseCase() -> DeleteItemUseCase {
+        DefaultDeleteItemUseCase(repository: makeItemsRepository())
+    }
+
+    /// Create a FetchProfile use case
+    /// - Returns: New instance of FetchProfileUseCase
+    func makeFetchProfileUseCase() -> FetchProfileUseCase {
+        DefaultFetchProfileUseCase(
+            repository: makeUserProfileRepository()
+        )
+    }
+
+    /// Create a CompleteIdentitySetup use case
+    /// - Returns: New instance of CompleteIdentitySetupUseCase
+    func makeCompleteIdentitySetupUseCase() -> CompleteIdentitySetupUseCase {
+        DefaultCompleteIdentitySetupUseCase(
+            repository: makeUserProfileRepository()
+        )
+    }
+
     // MARK: - Infrastructure Factory
 
     /// Create a config loader
@@ -134,5 +235,17 @@ final class AppDependencyContainer {
     /// - Returns: Shared session repository instance
     func makeSessionRepository() -> SessionRepository {
         sharedSessionRepository
+    }
+
+    /// Create a user profile repository
+    /// - Returns: Shared user profile repository instance
+    func makeUserProfileRepository() -> UserProfileRepository {
+        sharedUserProfileRepository
+    }
+
+    /// Create an items repository
+    /// - Returns: Shared items repository instance
+    func makeItemsRepository() -> ItemsRepository {
+        sharedItemsRepository
     }
 }

@@ -14,6 +14,10 @@ protocol Router: AnyObject {
     /// Checks auth guards and delegates to coordinator
     func navigate(to route: Route)
 
+    /// Navigate to a URL
+    /// Resolves URL to route first, then navigates
+    func navigate(to url: URL)
+
     /// Check if navigation to route is allowed
     /// Returns false if auth guard denies access
     func canNavigate(to route: Route) async -> Bool

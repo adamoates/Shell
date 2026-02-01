@@ -1,0 +1,55 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.adamcodertrader.Shell"],
+        "components": [
+          {
+            "/": "/",
+            "comment": "Home page - opens to authenticated home"
+          },
+          {
+            "/": "/profile/*",
+            "comment": "User profile pages with dynamic user IDs"
+          },
+          {
+            "/": "/settings",
+            "comment": "Settings main page"
+          },
+          {
+            "/": "/settings/*",
+            "comment": "Settings subsections (account, privacy, notifications)"
+          },
+          {
+            "/": "/identity",
+            "comment": "Identity setup flow"
+          },
+          {
+            "/": "/identity/*",
+            "comment": "Identity setup steps (screenname, birthday, avatar, review)"
+          },
+          {
+            "/": "/login",
+            "exclude": true,
+            "comment": "Don't open login in app - keep in browser"
+          },
+          {
+            "/": "/logout",
+            "exclude": true,
+            "comment": "Don't open logout in app - keep in browser"
+          },
+          {
+            "/": "/signup",
+            "exclude": true,
+            "comment": "Don't open signup in app - keep in browser"
+          },
+          {
+            "/": "/forgot-password",
+            "exclude": true,
+            "comment": "Don't open password reset in app - keep in browser"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -6,15 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		703351572F2EAC1A0071E3E6 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 703351562F2EAC1A0071E3E6 /* XCTest.framework */; platformFilter = ios; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
-		70334DB22F2C938D0071E3E6 /* PBXContainerItemProxy */ = {
+		70334DBC2F2C938D0071E3E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 70334D8F2F2C938B0071E3E6 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 70334D962F2C938B0071E3E6;
 			remoteInfo = Shell;
 		};
-		70334DBC2F2C938D0071E3E6 /* PBXContainerItemProxy */ = {
+		703350102F2E9D1D0071E3E6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 70334D8F2F2C938B0071E3E6 /* Project object */;
 			proxyType = 1;
@@ -27,6 +31,7 @@
 		70334D972F2C938B0071E3E6 /* Shell.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Shell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		70334DB12F2C938D0071E3E6 /* ShellTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShellTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		70334DBB2F2C938D0071E3E6 /* ShellUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShellUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		703351562F2EAC1A0071E3E6 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -77,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				703351572F2EAC1A0071E3E6 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +104,7 @@
 				70334DBE2F2C938D0071E3E6 /* ShellUITests */,
 				70334D982F2C938B0071E3E6 /* Products */,
 				70334DD12F2C94410071E3E6 /* .claude */,
+				703351552F2EAC1A0071E3E6 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -109,6 +116,14 @@
 				70334DBB2F2C938D0071E3E6 /* ShellUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		703351552F2EAC1A0071E3E6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				703351562F2EAC1A0071E3E6 /* XCTest.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -147,7 +162,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				70334DB32F2C938D0071E3E6 /* PBXTargetDependency */,
+				703350112F2E9D1D0071E3E6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				70334DB42F2C938D0071E3E6 /* ShellTests */,
@@ -198,11 +213,9 @@
 					};
 					70334DB02F2C938D0071E3E6 = {
 						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 70334D962F2C938B0071E3E6;
 					};
 					70334DBA2F2C938D0071E3E6 = {
 						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 70334D962F2C938B0071E3E6;
 					};
 				};
 			};
@@ -276,15 +289,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		70334DB32F2C938D0071E3E6 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 70334D962F2C938B0071E3E6 /* Shell */;
-			targetProxy = 70334DB22F2C938D0071E3E6 /* PBXContainerItemProxy */;
-		};
 		70334DBD2F2C938D0071E3E6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 70334D962F2C938B0071E3E6 /* Shell */;
 			targetProxy = 70334DBC2F2C938D0071E3E6 /* PBXContainerItemProxy */;
+		};
+		703350112F2E9D1D0071E3E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 70334D962F2C938B0071E3E6 /* Shell */;
+			targetProxy = 703350102F2E9D1D0071E3E6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -302,7 +315,6 @@
 				INFOPLIST_FILE = Shell/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -335,7 +347,6 @@
 				INFOPLIST_FILE = Shell/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -530,13 +541,13 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adamcodertrader.ShellUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Shell;
 			};
 			name = Debug;
 		};
@@ -550,13 +561,13 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adamcodertrader.ShellUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Shell;
 			};
 			name = Release;
 		};

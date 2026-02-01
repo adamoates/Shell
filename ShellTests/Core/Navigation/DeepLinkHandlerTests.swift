@@ -8,76 +8,80 @@
 import XCTest
 @testable import Shell
 
+// MARK: - Test Doubles
+
+private final class RouterSpy: Router {
+    private(set) var navigatedRoutes: [Route] = []
+    private(set) var canNavigateChecks: [Route] = []
+    var canNavigateResult = true
+
+    func navigate(to route: Route) {
+        navigatedRoutes.append(route)
+    }
+
+    func navigate(to url: URL) {
+        // Not used in these tests
+    }
+
+    func canNavigate(to route: Route) async -> Bool {
+        canNavigateChecks.append(route)
+        return canNavigateResult
+    }
+}
+
 /// Tests for UniversalLinkHandler and CustomURLSchemeHandler
 /// Verifies deep link handling and routing
 final class DeepLinkHandlerTests: XCTestCase {
+    private var resolver: DefaultRouteResolver!
+    private var router: RouterSpy!
+    private var universalHandler: UniversalLinkHandler!
+    private var customHandler: CustomURLSchemeHandler!
 
-    // MARK: - Test Doubles
+    override func setUp() {
+        super.setUp()
+        resolver = DefaultRouteResolver()
+        router = RouterSpy()
+        universalHandler = UniversalLinkHandler(routeResolver: resolver, router: router)
+        customHandler = CustomURLSchemeHandler(routeResolver: resolver, router: router)
+    }
 
-    private final class RouterSpy: Router {
-        private(set) var navigatedRoutes: [Route] = []
-        private(set) var canNavigateChecks: [Route] = []
-        var canNavigateResult = true
-
-        func navigate(to route: Route) {
-            navigatedRoutes.append(route)
-        }
-
-        func canNavigate(to route: Route) async -> Bool {
-            canNavigateChecks.append(route)
-            return canNavigateResult
-        }
+    override func tearDown() {
+        customHandler = nil
+        universalHandler = nil
+        resolver = nil
+        router = nil
+        super.tearDown()
     }
 
     // MARK: - UniversalLinkHandler Tests
 
     func testUniversalLinkHandler_canHandle_validDomain_returnsTrue() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://shell.app/login")!
 
-        XCTAssertTrue(sut.canHandle(url: url))
+        XCTAssertTrue(universalHandler.canHandle(url: url))
     }
 
     func testUniversalLinkHandler_canHandle_wwwSubdomain_returnsTrue() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://www.shell.app/login")!
 
-        XCTAssertTrue(sut.canHandle(url: url))
+        XCTAssertTrue(universalHandler.canHandle(url: url))
     }
 
     func testUniversalLinkHandler_canHandle_differentDomain_returnsFalse() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://example.com/login")!
 
-        XCTAssertFalse(sut.canHandle(url: url))
+        XCTAssertFalse(universalHandler.canHandle(url: url))
     }
 
     func testUniversalLinkHandler_canHandle_customScheme_returnsFalse() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "shell://login")!
 
-        XCTAssertFalse(sut.canHandle(url: url))
+        XCTAssertFalse(universalHandler.canHandle(url: url))
     }
 
     func testUniversalLinkHandler_handle_validURL_navigatesToRoute() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://shell.app/profile/user123")!
-        let handled = sut.handle(url: url)
+        let handled = universalHandler.handle(url: url)
 
         XCTAssertTrue(handled)
         XCTAssertEqual(router.navigatedRoutes.count, 1)
@@ -85,12 +89,8 @@ final class DeepLinkHandlerTests: XCTestCase {
     }
 
     func testUniversalLinkHandler_handle_invalidDomain_returnsFalse() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = UniversalLinkHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://example.com/profile/user123")!
-        let handled = sut.handle(url: url)
+        let handled = universalHandler.handle(url: url)
 
         XCTAssertFalse(handled)
         XCTAssertEqual(router.navigatedRoutes.count, 0)
@@ -99,32 +99,20 @@ final class DeepLinkHandlerTests: XCTestCase {
     // MARK: - CustomURLSchemeHandler Tests
 
     func testCustomURLSchemeHandler_canHandle_validScheme_returnsTrue() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = CustomURLSchemeHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "shell://login")!
 
-        XCTAssertTrue(sut.canHandle(url: url))
+        XCTAssertTrue(customHandler.canHandle(url: url))
     }
 
     func testCustomURLSchemeHandler_canHandle_httpsScheme_returnsFalse() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = CustomURLSchemeHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://shell.app/login")!
 
-        XCTAssertFalse(sut.canHandle(url: url))
+        XCTAssertFalse(customHandler.canHandle(url: url))
     }
 
     func testCustomURLSchemeHandler_handle_validURL_navigatesToRoute() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = CustomURLSchemeHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "shell://settings/privacy")!
-        let handled = sut.handle(url: url)
+        let handled = customHandler.handle(url: url)
 
         XCTAssertTrue(handled)
         XCTAssertEqual(router.navigatedRoutes.count, 1)
@@ -132,12 +120,8 @@ final class DeepLinkHandlerTests: XCTestCase {
     }
 
     func testCustomURLSchemeHandler_handle_invalidScheme_returnsFalse() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-        let sut = CustomURLSchemeHandler(routeResolver: resolver, router: router)
-
         let url = URL(string: "https://shell.app/settings/privacy")!
-        let handled = sut.handle(url: url)
+        let handled = customHandler.handle(url: url)
 
         XCTAssertFalse(handled)
         XCTAssertEqual(router.navigatedRoutes.count, 0)
@@ -146,12 +130,6 @@ final class DeepLinkHandlerTests: XCTestCase {
     // MARK: - Integration Tests
 
     func testDeepLinkHandlers_bothHandlers_correctPriority() {
-        let resolver = DefaultRouteResolver()
-        let router = RouterSpy()
-
-        let universalHandler = UniversalLinkHandler(routeResolver: resolver, router: router)
-        let customHandler = CustomURLSchemeHandler(routeResolver: resolver, router: router)
-
         let handlers: [DeepLinkHandler] = [universalHandler, customHandler]
 
         // Test universal link

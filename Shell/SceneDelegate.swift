@@ -19,6 +19,25 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
+        // MARK: - Test Environment Detection
+        // Skip full app initialization when running unit tests
+        // Check for: 1) environment variable, 2) test bundle, or 3) XCTest configuration
+        let isUnitTesting = ProcessInfo.processInfo.environment["IS_UNIT_TESTING"] == "1" ||
+                           ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+                           ProcessInfo.processInfo.arguments.contains("-XCTest") ||
+                           Bundle.main.bundlePath.hasSuffix(".xctest")
+
+        if isUnitTesting {
+            // Minimal window setup for unit tests
+            // Unit tests should test ViewModels/UseCases, not full app flow
+            window = UIWindow(windowScene: windowScene)
+            window?.rootViewController = UIViewController()
+            window?.makeKeyAndVisible()
+            return
+        }
+
+        // MARK: - Normal App Initialization
+
         // Create window
         let window = UIWindow(windowScene: windowScene)
         self.window = window
@@ -43,12 +62,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let urlContext = connectionOptions.urlContexts.first {
             handleDeepLink(urlContext.url)
         }
+
+        // Handle Universal Links from initial launch (if any)
+        if let userActivity = connectionOptions.userActivities.first(where: { $0.activityType == NSUserActivityTypeBrowsingWeb }) {
+            _ = AppDelegate.handleUniversalLink(userActivity)
+        }
     }
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         // Handle deep links when app is already running
         guard let url = URLContexts.first?.url else { return }
         handleDeepLink(url)
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        // Handle Universal Links when app is running or in background
+        print("🔗 SceneDelegate: Received Universal Link activity")
+        _ = AppDelegate.handleUniversalLink(userActivity)
     }
 
     // MARK: - Deep Link Handling

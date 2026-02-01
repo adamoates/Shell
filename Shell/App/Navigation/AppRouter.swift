@@ -12,10 +12,12 @@ import Foundation
 final class AppRouter: Router {
     private let coordinator: AppCoordinator
     private let accessControl: RouteAccessControl
+    private let routeResolver: RouteResolver
 
-    init(coordinator: AppCoordinator, accessControl: RouteAccessControl) {
+    init(coordinator: AppCoordinator, accessControl: RouteAccessControl, routeResolver: RouteResolver) {
         self.coordinator = coordinator
         self.accessControl = accessControl
+        self.routeResolver = routeResolver
     }
 
     func canNavigate(to route: Route) async -> Bool {
@@ -44,6 +46,21 @@ final class AppRouter: Router {
         }
     }
 
+    func navigate(to url: URL) {
+        print("🔗 AppRouter: Resolving URL: \(url)")
+
+        // Resolve URL to Route
+        guard let route = routeResolver.resolve(url: url) else {
+            print("⚠️ AppRouter: Could not resolve URL to route")
+            return
+        }
+
+        print("✅ AppRouter: Resolved to route: \(route.description)")
+
+        // Navigate to the resolved route
+        navigate(to: route)
+    }
+
     // MARK: - Private
 
     @MainActor
@@ -60,10 +77,9 @@ final class AppRouter: Router {
             coordinator.route(to: .authenticated)
 
         case .profile(let userID):
-            // Future: Specific profile coordinator
+            // Show profile for user
             print("  → Profile: \(userID)")
-            // For now, just route to authenticated
-            coordinator.route(to: .authenticated)
+            coordinator.showProfile(userID: userID)
 
         case .settings(let section):
             // Future: Settings coordinator
@@ -72,10 +88,9 @@ final class AppRouter: Router {
             coordinator.route(to: .authenticated)
 
         case .identitySetup(let step):
-            // Future: Identity flow coordinator
+            // Show identity setup flow
             print("  → Identity setup step: \(step?.rawValue ?? "start")")
-            // For now, just route to authenticated
-            coordinator.route(to: .authenticated)
+            coordinator.showIdentitySetup(startStep: step)
 
         case .notFound(let path):
             print("⚠️ AppRouter: Route not found: \(path)")
@@ -95,8 +110,9 @@ final class AppRouter: Router {
 
         switch reason {
         case .unauthenticated:
+            // Save the intended route for post-login redirect
+            coordinator.saveIntendedRoute(route)
             // Redirect to login
-            // Future: Save intended destination for post-login redirect
             coordinator.route(to: .unauthenticated)
 
         case .locked:

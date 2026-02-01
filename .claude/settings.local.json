@@ -5,7 +5,26 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(set -o pipefail)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(pkill:*)",
+      "Bash(tree:*)",
+      "Bash(xcrun simctl:*)",
+      "Bash(xcrun xcresulttool:*)",
+      "Bash(python3:*)",
+      "Bash(log show:*)",
+      "Bash(nm:*)",
+      "Bash(killall:*)",
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(ls:*)",
+      "Bash(plutil:*)",
+      "Bash(xargs:*)"
     ]
   }
 }

@@ -11,11 +11,17 @@ import UIKit
 protocol ListViewControllerDelegate: AnyObject {
     func listViewControllerDidRequestLogout(_ controller: ListViewController)
     func listViewController(_ controller: ListViewController, didSelectItem item: Item)
+    func listViewControllerDidRequestIdentitySetup(_ controller: ListViewController)
+    func listViewControllerDidRequestProfile(_ controller: ListViewController)
+    func listViewControllerDidRequestCreateItem(_ controller: ListViewController)
+    func listViewController(_ controller: ListViewController, didRequestEditItem item: Item)
 }
 
 /// Protocol for ItemsCoordinator to communicate events back to parent
 protocol ItemsCoordinatorDelegate: AnyObject {
     func itemsCoordinatorDidRequestLogout(_ coordinator: ItemsCoordinator)
+    func itemsCoordinatorDidRequestIdentitySetup(_ coordinator: ItemsCoordinator)
+    func itemsCoordinatorDidRequestProfile(_ coordinator: ItemsCoordinator)
 }
 
 /// Coordinator responsible for items/content flows
@@ -32,10 +38,25 @@ final class ItemsCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
     weak var delegate: ItemsCoordinatorDelegate?
 
+    private let fetchItems: FetchItemsUseCase
+    private let createItem: CreateItemUseCase
+    private let updateItem: UpdateItemUseCase
+    private let deleteItem: DeleteItemUseCase
+
     // MARK: - Initialization
 
-    init(navigationController: UINavigationController) {
+    init(
+        navigationController: UINavigationController,
+        fetchItems: FetchItemsUseCase,
+        createItem: CreateItemUseCase,
+        updateItem: UpdateItemUseCase,
+        deleteItem: DeleteItemUseCase
+    ) {
         self.navigationController = navigationController
+        self.fetchItems = fetchItems
+        self.createItem = createItem
+        self.updateItem = updateItem
+        self.deleteItem = deleteItem
     }
 
     // MARK: - Coordinator
@@ -52,38 +73,46 @@ final class ItemsCoordinator: Coordinator {
 
     @MainActor
     private func showItemsList() {
-        guard let listVC = loadListViewController() else {
-            print("⚠️ ItemsCoordinator: Failed to load ListViewController")
-            return
-        }
-
+        // Create and inject ViewModel
+        let viewModel = ListViewModel(fetchItems: fetchItems)
+        let listVC = ListViewController(viewModel: viewModel, username: nil)
         listVC.delegate = self
+
         navigationController.setViewControllers([listVC], animated: false)
     }
 
     @MainActor
     private func showDetail(for item: Item) {
-        guard let detailVC = loadDetailViewController() else {
-            print("⚠️ ItemsCoordinator: Failed to load DetailViewController")
-            return
-        }
-
-        detailVC.item = item
+        let detailVC = DetailViewController(item: item)
         navigationController.pushViewController(detailVC, animated: true)
     }
 
-    // MARK: - Storyboard Loading
-
     @MainActor
-    private func loadListViewController() -> ListViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "ListViewController") as? ListViewController
+    private func showCreateItem() {
+        let viewModel = ItemEditorViewModel(
+            createItem: createItem,
+            updateItem: updateItem,
+            itemToEdit: nil
+        )
+        viewModel.delegate = self
+
+        let editorVC = ItemEditorViewController(viewModel: viewModel)
+        let navController = UINavigationController(rootViewController: editorVC)
+        navigationController.present(navController, animated: true)
     }
 
     @MainActor
-    private func loadDetailViewController() -> DetailViewController? {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        return storyboard.instantiateViewController(withIdentifier: "DetailViewController") as? DetailViewController
+    private func showEditItem(_ item: Item) {
+        let viewModel = ItemEditorViewModel(
+            createItem: createItem,
+            updateItem: updateItem,
+            itemToEdit: item
+        )
+        viewModel.delegate = self
+
+        let editorVC = ItemEditorViewController(viewModel: viewModel)
+        let navController = UINavigationController(rootViewController: editorVC)
+        navigationController.present(navController, animated: true)
     }
 }
 
@@ -98,5 +127,46 @@ extension ItemsCoordinator: ListViewControllerDelegate {
     func listViewController(_ controller: ListViewController, didSelectItem item: Item) {
         print("✅ ItemsCoordinator: Item selected - \(item.title)")
         showDetail(for: item)
+    }
+
+    func listViewControllerDidRequestIdentitySetup(_ controller: ListViewController) {
+        print("✅ ItemsCoordinator: Identity setup requested")
+        delegate?.itemsCoordinatorDidRequestIdentitySetup(self)
+    }
+
+    func listViewControllerDidRequestProfile(_ controller: ListViewController) {
+        print("✅ ItemsCoordinator: Profile view requested")
+        delegate?.itemsCoordinatorDidRequestProfile(self)
+    }
+
+    func listViewControllerDidRequestCreateItem(_ controller: ListViewController) {
+        print("✅ ItemsCoordinator: Create item requested")
+        showCreateItem()
+    }
+
+    func listViewController(_ controller: ListViewController, didRequestEditItem item: Item) {
+        print("✅ ItemsCoordinator: Edit item requested - \(item.title)")
+        showEditItem(item)
+    }
+}
+
+// MARK: - ItemEditorViewModelDelegate
+
+extension ItemsCoordinator: ItemEditorViewModelDelegate {
+    func itemEditorViewModel(_ viewModel: ItemEditorViewModel, didSaveItem item: Item) {
+        // Dismiss the editor
+        navigationController.dismiss(animated: true)
+
+        // Refresh the list to show the updated/new item
+        if let listVC = navigationController.viewControllers.first as? ListViewController {
+            Task {
+                await listVC.refreshList()
+            }
+        }
+    }
+
+    func itemEditorViewModelDidCancel(_ viewModel: ItemEditorViewModel) {
+        // Dismiss the editor
+        navigationController.dismiss(animated: true)
     }
 }
