@@ -302,7 +302,7 @@ final class ObserverTests: XCTestCase {
 // MARK: - AppEvent Equatable (for testing)
 
 extension EventBus.AppEvent: Equatable {
-    static func == (lhs: EventBus.AppEvent, rhs: EventBus.AppEvent) -> Bool {
+    public static func == (lhs: EventBus.AppEvent, rhs: EventBus.AppEvent) -> Bool {
         switch (lhs, rhs) {
         case (.userLoggedIn(let lhsId), .userLoggedIn(let rhsId)):
             return lhsId == rhsId
