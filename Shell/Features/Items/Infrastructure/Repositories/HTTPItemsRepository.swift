@@ -10,9 +10,9 @@ import Foundation
 /// HTTP-based implementation of ItemsRepository
 /// Communicates with the backend Items API
 actor HTTPItemsRepository: ItemsRepository {
-    private let httpClient: HTTPClient
+    private let httpClient: ItemsHTTPClient
 
-    init(httpClient: HTTPClient) {
+    init(httpClient: ItemsHTTPClient) {
         self.httpClient = httpClient
     }
 

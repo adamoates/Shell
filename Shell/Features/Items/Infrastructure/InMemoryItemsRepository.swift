@@ -22,41 +22,31 @@ actor InMemoryItemsRepository: ItemsRepository {
 
     init() {
         // Initialize with sample data
+        let now = Date()
         items = [
             Item(
                 id: UUID().uuidString,
-                title: "Welcome to Shell",
-                subtitle: "Getting Started",
-                description: "This is a demonstration of proper programmatic UI with Auto Layout constraints that adapt to all device sizes and Dynamic Type settings.",
-                date: Date()
+                name: "Review AAPL earnings",
+                description: "Check quarterly results and analyst commentary",
+                isCompleted: false,
+                createdAt: now,
+                updatedAt: now
             ),
             Item(
                 id: UUID().uuidString,
-                title: "Adaptive Layouts",
-                subtitle: "Size Classes",
-                description: "These constraints work perfectly across all devices from iPhone SE to iPad Pro, in both portrait and landscape orientations.",
-                date: Date().addingTimeInterval(-3600)
+                name: "Update portfolio spreadsheet",
+                description: "Q1 2026 performance tracking",
+                isCompleted: true,
+                createdAt: now.addingTimeInterval(-3600),
+                updatedAt: now.addingTimeInterval(-3600)
             ),
             Item(
                 id: UUID().uuidString,
-                title: "Dynamic Type",
-                subtitle: "Accessibility",
-                description: "All text scales properly with Dynamic Type. Try changing text size in Settings > Accessibility > Display & Text Size.",
-                date: Date().addingTimeInterval(-7200)
-            ),
-            Item(
-                id: UUID().uuidString,
-                title: "MVVM Pattern",
-                subtitle: "Architecture",
-                description: "ViewModels manage state and business logic, ViewControllers handle UI, keeping code clean and testable.",
-                date: Date().addingTimeInterval(-86400)
-            ),
-            Item(
-                id: UUID().uuidString,
-                title: "Pull to Refresh",
-                subtitle: "iOS Pattern",
-                description: "This list demonstrates pull-to-refresh, a common iOS UI pattern for updating content.",
-                date: Date().addingTimeInterval(-172800)
+                name: "Buy QQQ calls",
+                description: "0DTE scalp strategy",
+                isCompleted: false,
+                createdAt: now.addingTimeInterval(-7200),
+                updatedAt: now.addingTimeInterval(-7200)
             )
         ]
         isInitialized = true

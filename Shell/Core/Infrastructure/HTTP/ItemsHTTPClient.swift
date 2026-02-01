@@ -1,5 +1,5 @@
 //
-//  HTTPClient.swift
+//  ItemsHTTPClient.swift
 //  Shell
 //
 //  Created by Shell on 2026-02-01.
@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// HTTP client abstraction for network requests
+/// HTTP client abstraction for Items network requests
 /// Allows mocking for tests using URLProtocol
-protocol HTTPClient: Sendable {
+protocol ItemsHTTPClient: Sendable {
     func request<T: Decodable>(
         _ endpoint: HTTPEndpoint,
         responseType: T.Type
@@ -45,8 +45,8 @@ struct HTTPEndpoint: Sendable {
     }
 }
 
-/// URLSession-based HTTP client implementation
-actor URLSessionHTTPClient: HTTPClient {
+/// URLSession-based HTTP client implementation for Items
+actor URLSessionItemsHTTPClient: ItemsHTTPClient {
     private let session: URLSession
     private let baseURL: URL
 

@@ -20,9 +20,9 @@ final class HTTPItemsRepositoryTests: XCTestCase {
         configuration.protocolClasses = [MockURLProtocol.self]
         mockURLSession = URLSession(configuration: configuration)
 
-        let httpClient = URLSessionHTTPClient(
+        let httpClient = URLSessionItemsHTTPClient(
             session: mockURLSession,
-            baseURL: URL(string: "http://localhost:3000/v1")!
+            baseURL: URL(string: "http://localhost:3000")!
         )
         repository = HTTPItemsRepository(httpClient: httpClient)
 

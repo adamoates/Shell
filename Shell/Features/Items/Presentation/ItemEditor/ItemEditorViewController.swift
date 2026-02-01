@@ -9,7 +9,7 @@ import UIKit
 import Combine
 
 /// View controller for creating or editing an item
-/// Displays form with title, subtitle, and description fields
+/// Displays form with name, description, and completion status fields
 final class ItemEditorViewController: UIViewController {
 
     // MARK: - Properties
@@ -28,9 +28,9 @@ final class ItemEditorViewController: UIViewController {
 
     private lazy var contentStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
-            titleTextField,
-            subtitleTextField,
+            nameTextField,
             descriptionTextView,
+            completionContainer,
             errorLabel
         ])
         stack.axis = .vertical
@@ -40,9 +40,9 @@ final class ItemEditorViewController: UIViewController {
         return stack
     }()
 
-    private lazy var titleTextField: UITextField = {
+    private lazy var nameTextField: UITextField = {
         let field = UITextField()
-        field.placeholder = "Title"
+        field.placeholder = "Item Name"
         field.borderStyle = .roundedRect
         field.autocapitalizationType = .words
         field.returnKeyType = .next
@@ -51,15 +51,28 @@ final class ItemEditorViewController: UIViewController {
         return field
     }()
 
-    private lazy var subtitleTextField: UITextField = {
-        let field = UITextField()
-        field.placeholder = "Subtitle"
-        field.borderStyle = .roundedRect
-        field.autocapitalizationType = .words
-        field.returnKeyType = .next
-        field.delegate = self
-        field.translatesAutoresizingMaskIntoConstraints = false
-        return field
+    private lazy var completionContainer: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [completionLabel, completionSwitch])
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    private lazy var completionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Mark as Completed"
+        label.font = .systemFont(ofSize: 17)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private lazy var completionSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.addTarget(self, action: #selector(completionSwitchChanged), for: .valueChanged)
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        return toggle
     }()
 
     private lazy var descriptionTextView: UITextView = {
@@ -137,9 +150,8 @@ final class ItemEditorViewController: UIViewController {
             contentStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: -20),
             contentStackView.widthAnchor.constraint(equalTo: scrollView.widthAnchor, constant: -40),
 
-            // Text field heights
-            titleTextField.heightAnchor.constraint(equalToConstant: 44),
-            subtitleTextField.heightAnchor.constraint(equalToConstant: 44),
+            // Text field height
+            nameTextField.heightAnchor.constraint(equalToConstant: 44),
 
             // Description text view height
             descriptionTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120)
@@ -175,11 +187,11 @@ final class ItemEditorViewController: UIViewController {
     }
 
     private func setupAccessibility() {
-        titleTextField.accessibilityLabel = "Title"
-        titleTextField.accessibilityHint = "Enter the item title"
+        nameTextField.accessibilityLabel = "Item Name"
+        nameTextField.accessibilityHint = "Enter the item name"
 
-        subtitleTextField.accessibilityLabel = "Subtitle"
-        subtitleTextField.accessibilityHint = "Enter the item subtitle"
+        completionSwitch.accessibilityLabel = "Mark as completed"
+        completionSwitch.accessibilityHint = "Toggle to mark this item as completed or incomplete"
 
         descriptionTextView.accessibilityLabel = "Description"
         descriptionTextView.accessibilityHint = "Enter the item description"
@@ -188,22 +200,22 @@ final class ItemEditorViewController: UIViewController {
     }
 
     private func setupBindings() {
-        // Bind title
-        viewModel.$title
+        // Bind name
+        viewModel.$name
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] title in
-                if self?.titleTextField.text != title {
-                    self?.titleTextField.text = title
+            .sink { [weak self] name in
+                if self?.nameTextField.text != name {
+                    self?.nameTextField.text = name
                 }
             }
             .store(in: &cancellables)
 
-        // Bind subtitle
-        viewModel.$subtitle
+        // Bind completion status
+        viewModel.$isCompleted
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] subtitle in
-                if self?.subtitleTextField.text != subtitle {
-                    self?.subtitleTextField.text = subtitle
+            .sink { [weak self] isCompleted in
+                if self?.completionSwitch.isOn != isCompleted {
+                    self?.completionSwitch.isOn = isCompleted
                 }
             }
             .store(in: &cancellables)
@@ -264,10 +276,14 @@ final class ItemEditorViewController: UIViewController {
         viewModel.cancel()
     }
 
+    @objc private func completionSwitchChanged() {
+        viewModel.isCompleted = completionSwitch.isOn
+    }
+
     @objc private func saveTapped() {
         // Sync text fields to view model
-        viewModel.title = titleTextField.text ?? ""
-        viewModel.subtitle = subtitleTextField.text ?? ""
+        viewModel.name = nameTextField.text ?? ""
+        viewModel.isCompleted = completionSwitch.isOn
 
         // Handle placeholder text for description
         if descriptionTextView.textColor == .placeholderText {
@@ -323,8 +339,8 @@ final class ItemEditorViewController: UIViewController {
             navigationItem.leftBarButtonItem?.isEnabled = false
 
             // Disable text fields
-            titleTextField.isEnabled = false
-            subtitleTextField.isEnabled = false
+            nameTextField.isEnabled = false
+            completionSwitch.isEnabled = false
             descriptionTextView.isEditable = false
         } else {
             // Re-enable save button
@@ -340,8 +356,8 @@ final class ItemEditorViewController: UIViewController {
             navigationItem.leftBarButtonItem?.isEnabled = true
 
             // Re-enable text fields
-            titleTextField.isEnabled = true
-            subtitleTextField.isEnabled = true
+            nameTextField.isEnabled = true
+            completionSwitch.isEnabled = true
             descriptionTextView.isEditable = true
         }
     }
@@ -357,9 +373,7 @@ final class ItemEditorViewController: UIViewController {
 
 extension ItemEditorViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == titleTextField {
-            subtitleTextField.becomeFirstResponder()
-        } else if textField == subtitleTextField {
+        if textField == nameTextField {
             descriptionTextView.becomeFirstResponder()
         }
         return true
@@ -367,10 +381,8 @@ extension ItemEditorViewController: UITextFieldDelegate {
 
     func textFieldDidEndEditing(_ textField: UITextField) {
         // Sync changes to view model
-        if textField == titleTextField {
-            viewModel.title = textField.text ?? ""
-        } else if textField == subtitleTextField {
-            viewModel.subtitle = textField.text ?? ""
+        if textField == nameTextField {
+            viewModel.name = textField.text ?? ""
         }
     }
 }

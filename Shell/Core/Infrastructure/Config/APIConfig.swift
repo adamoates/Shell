@@ -26,7 +26,7 @@ struct APIConfig {
 
     /// Local development configuration
     static let local = APIConfig(
-        baseURL: URL(string: "http://localhost:3000/v1")!,
+        baseURL: URL(string: "http://localhost:3000")!,
         authToken: nil
     )
 
@@ -50,6 +50,16 @@ struct RepositoryConfig {
         return false  // Use in-memory for now during development
         #else
         return true  // Use remote in production
+        #endif
+    }
+
+    /// Use HTTP Items repository (true) or in-memory repository (false)
+    /// Set to true to connect to backend API
+    static var useHTTPItemsRepository: Bool {
+        #if DEBUG
+        return true  // Use HTTP for items during development
+        #else
+        return true  // Use HTTP in production
         #endif
     }
 }
