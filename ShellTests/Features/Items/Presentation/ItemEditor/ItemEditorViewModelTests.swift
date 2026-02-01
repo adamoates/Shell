@@ -19,16 +19,16 @@ final class ItemEditorViewModelTests: XCTestCase {
 
     private final class MockCreateItemUseCase: CreateItemUseCase {
         var executeCallCount = 0
-        var capturedTitle: String?
-        var capturedSubtitle: String?
+        var capturedName: String?
         var capturedDescription: String?
+        var capturedIsCompleted: Bool?
         var resultToReturn: Result<Item, Error>?
 
-        func execute(title: String, subtitle: String, description: String) async throws -> Item {
+        func execute(name: String, description: String, isCompleted: Bool) async throws -> Item {
             executeCallCount += 1
-            capturedTitle = title
-            capturedSubtitle = subtitle
+            capturedName = name
             capturedDescription = description
+            capturedIsCompleted = isCompleted
 
             switch resultToReturn {
             case .success(let item):
@@ -36,7 +36,8 @@ final class ItemEditorViewModelTests: XCTestCase {
             case .failure(let error):
                 throw error
             case .none:
-                return Item(id: "new-id", title: title, subtitle: subtitle, description: description, date: Date())
+                let now = Date()
+                return Item(id: "new-id", name: name, description: description, isCompleted: isCompleted, createdAt: now, updatedAt: now)
             }
         }
     }
@@ -44,17 +45,17 @@ final class ItemEditorViewModelTests: XCTestCase {
     private final class MockUpdateItemUseCase: UpdateItemUseCase {
         var executeCallCount = 0
         var capturedID: String?
-        var capturedTitle: String?
-        var capturedSubtitle: String?
+        var capturedName: String?
         var capturedDescription: String?
+        var capturedIsCompleted: Bool?
         var resultToReturn: Result<Item, Error>?
 
-        func execute(id: String, title: String, subtitle: String, description: String) async throws -> Item {
+        func execute(id: String, name: String, description: String, isCompleted: Bool) async throws -> Item {
             executeCallCount += 1
             capturedID = id
-            capturedTitle = title
-            capturedSubtitle = subtitle
+            capturedName = name
             capturedDescription = description
+            capturedIsCompleted = isCompleted
 
             switch resultToReturn {
             case .success(let item):
@@ -62,7 +63,8 @@ final class ItemEditorViewModelTests: XCTestCase {
             case .failure(let error):
                 throw error
             case .none:
-                return Item(id: id, title: title, subtitle: subtitle, description: description, date: Date())
+                let now = Date()
+                return Item(id: id, name: name, description: description, isCompleted: isCompleted, createdAt: now, updatedAt: now)
             }
         }
     }
@@ -120,9 +122,9 @@ final class ItemEditorViewModelTests: XCTestCase {
         )
 
         // Assert
-        XCTAssertTrue(sut.title.isEmpty)
-        XCTAssertTrue(sut.subtitle.isEmpty)
+        XCTAssertTrue(sut.name.isEmpty)
         XCTAssertTrue(sut.itemDescription.isEmpty)
+        XCTAssertFalse(sut.isCompleted)
         XCTAssertFalse(sut.isEditMode)
         XCTAssertEqual(sut.saveButtonTitle, "Create Item")
     }
@@ -131,12 +133,14 @@ final class ItemEditorViewModelTests: XCTestCase {
 
     func testInit_editMode_prePopulatesFields() {
         // Arrange
+        let now = Date()
         let existingItem = Item(
             id: "123",
-            title: "Existing Title",
-            subtitle: "Existing Subtitle",
+            name: "Existing Name",
             description: "Existing Description",
-            date: Date()
+            isCompleted: true,
+            createdAt: now,
+            updatedAt: now
         )
 
         // Act
@@ -147,9 +151,9 @@ final class ItemEditorViewModelTests: XCTestCase {
         )
 
         // Assert
-        XCTAssertEqual(sut.title, "Existing Title")
-        XCTAssertEqual(sut.subtitle, "Existing Subtitle")
+        XCTAssertEqual(sut.name, "Existing Name")
         XCTAssertEqual(sut.itemDescription, "Existing Description")
+        XCTAssertEqual(sut.isCompleted, true)
         XCTAssertTrue(sut.isEditMode)
         XCTAssertEqual(sut.saveButtonTitle, "Save Changes")
     }
@@ -164,9 +168,9 @@ final class ItemEditorViewModelTests: XCTestCase {
             itemToEdit: nil
         )
         sut.delegate = mockDelegate
-        sut.title = "New Item"
-        sut.subtitle = "New Subtitle"
+        sut.name = "New Item"
         sut.itemDescription = "New Description"
+        sut.isCompleted = false
 
         // Act
         sut.save()
@@ -174,15 +178,16 @@ final class ItemEditorViewModelTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(mockCreateUseCase.executeCallCount, 1)
-        XCTAssertEqual(mockCreateUseCase.capturedTitle, "New Item")
-        XCTAssertEqual(mockCreateUseCase.capturedSubtitle, "New Subtitle")
+        XCTAssertEqual(mockCreateUseCase.capturedName, "New Item")
         XCTAssertEqual(mockCreateUseCase.capturedDescription, "New Description")
+        XCTAssertEqual(mockCreateUseCase.capturedIsCompleted, false)
         XCTAssertEqual(mockUpdateUseCase.executeCallCount, 0, "Should not call update in create mode")
     }
 
     func testSave_createMode_onSuccess_notifiesDelegate() async {
         // Arrange
-        let createdItem = Item(id: "new-id", title: "New", subtitle: "Item", description: "Desc", date: Date())
+        let now = Date()
+        let createdItem = Item(id: "new-id", name: "New Item", description: "Description", isCompleted: false, createdAt: now, updatedAt: now)
         mockCreateUseCase.resultToReturn = .success(createdItem)
 
         sut = ItemEditorViewModel(
@@ -191,9 +196,9 @@ final class ItemEditorViewModelTests: XCTestCase {
             itemToEdit: nil
         )
         sut.delegate = mockDelegate
-        sut.title = "New"
-        sut.subtitle = "Item"
-        sut.itemDescription = "Desc"
+        sut.name = "New Item"
+        sut.itemDescription = "Description"
+        sut.isCompleted = false
 
         // Act
         sut.save()
@@ -209,16 +214,17 @@ final class ItemEditorViewModelTests: XCTestCase {
 
     func testSave_editMode_withValidData_callsUpdateUseCase() async {
         // Arrange
-        let existingItem = Item(id: "123", title: "Old", subtitle: "Title", description: "Desc", date: Date())
+        let now = Date()
+        let existingItem = Item(id: "123", name: "Old Name", description: "Old Description", isCompleted: false, createdAt: now, updatedAt: now)
         sut = ItemEditorViewModel(
             createItem: mockCreateUseCase,
             updateItem: mockUpdateUseCase,
             itemToEdit: existingItem
         )
         sut.delegate = mockDelegate
-        sut.title = "Updated Title"
-        sut.subtitle = "Updated Subtitle"
+        sut.name = "Updated Name"
         sut.itemDescription = "Updated Description"
+        sut.isCompleted = true
 
         // Act
         sut.save()
@@ -227,23 +233,22 @@ final class ItemEditorViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(mockUpdateUseCase.executeCallCount, 1)
         XCTAssertEqual(mockUpdateUseCase.capturedID, "123")
-        XCTAssertEqual(mockUpdateUseCase.capturedTitle, "Updated Title")
-        XCTAssertEqual(mockUpdateUseCase.capturedSubtitle, "Updated Subtitle")
+        XCTAssertEqual(mockUpdateUseCase.capturedName, "Updated Name")
         XCTAssertEqual(mockUpdateUseCase.capturedDescription, "Updated Description")
+        XCTAssertEqual(mockUpdateUseCase.capturedIsCompleted, true)
         XCTAssertEqual(mockCreateUseCase.executeCallCount, 0, "Should not call create in edit mode")
     }
 
     // MARK: - Tests: Validation
 
-    func testSave_withEmptyTitle_setsErrorMessage() async {
+    func testSave_withEmptyName_setsErrorMessage() async {
         // Arrange
         sut = ItemEditorViewModel(
             createItem: mockCreateUseCase,
             updateItem: mockUpdateUseCase,
             itemToEdit: nil
         )
-        sut.title = ""
-        sut.subtitle = "Subtitle"
+        sut.name = ""
         sut.itemDescription = "Description"
 
         // Act
@@ -251,28 +256,8 @@ final class ItemEditorViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 50_000_000) // Wait for validation
 
         // Assert
-        XCTAssertEqual(sut.errorMessage, "Title cannot be empty")
+        XCTAssertEqual(sut.errorMessage, "Name cannot be empty")
         XCTAssertEqual(mockCreateUseCase.executeCallCount, 0, "Should not call use case when validation fails")
-    }
-
-    func testSave_withEmptySubtitle_setsErrorMessage() async {
-        // Arrange
-        sut = ItemEditorViewModel(
-            createItem: mockCreateUseCase,
-            updateItem: mockUpdateUseCase,
-            itemToEdit: nil
-        )
-        sut.title = "Title"
-        sut.subtitle = ""
-        sut.itemDescription = "Description"
-
-        // Act
-        sut.save()
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        // Assert
-        XCTAssertEqual(sut.errorMessage, "Subtitle cannot be empty")
-        XCTAssertEqual(mockCreateUseCase.executeCallCount, 0)
     }
 
     func testSave_withEmptyDescription_setsErrorMessage() async {
@@ -282,8 +267,7 @@ final class ItemEditorViewModelTests: XCTestCase {
             updateItem: mockUpdateUseCase,
             itemToEdit: nil
         )
-        sut.title = "Title"
-        sut.subtitle = "Subtitle"
+        sut.name = "Name"
         sut.itemDescription = ""
 
         // Act
@@ -306,8 +290,7 @@ final class ItemEditorViewModelTests: XCTestCase {
             itemToEdit: nil
         )
         sut.delegate = mockDelegate
-        sut.title = "Title"
-        sut.subtitle = "Subtitle"
+        sut.name = "Name"
         sut.itemDescription = "Description"
 
         // Act
@@ -329,8 +312,7 @@ final class ItemEditorViewModelTests: XCTestCase {
             updateItem: mockUpdateUseCase,
             itemToEdit: nil
         )
-        sut.title = "Title"
-        sut.subtitle = "Subtitle"
+        sut.name = "Name"
         sut.itemDescription = "Description"
 
         var loadingStates: [Bool] = []
