@@ -1,0 +1,410 @@
+{
+	"info": {
+		"_postman_id": "shell-backend-api",
+		"name": "Shell Backend API",
+		"description": "Backend API for Shell iOS app - User Profile Management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"health"
+					]
+				},
+				"description": "Check API and database connection status"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Profile",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"screenName\": \"trader123\",\n  \"birthday\": \"1990-05-15\",\n  \"avatarURL\": \"https://cdn.shell.app/avatar.jpg\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/users/:userID/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						":userID",
+						"profile"
+					],
+					"variable": [
+						{
+							"key": "userID",
+							"value": "user123",
+							"description": "User ID"
+						}
+					]
+				},
+				"description": "Create a new user profile (also updates if exists)"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Profile",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"screenName\": \"updated_trader\",\n  \"birthday\": \"1990-05-15\",\n  \"avatarURL\": \"https://cdn.shell.app/new_avatar.jpg\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/users/:userID/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						":userID",
+						"profile"
+					],
+					"variable": [
+						{
+							"key": "userID",
+							"value": "user123",
+							"description": "User ID"
+						}
+					]
+				},
+				"description": "Update an existing user profile"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Profile",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/v1/users/:userID/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						":userID",
+						"profile"
+					],
+					"variable": [
+						{
+							"key": "userID",
+							"value": "user123",
+							"description": "User ID"
+						}
+					]
+				},
+				"description": "Fetch user profile by ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Profile",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/v1/users/:userID/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						":userID",
+						"profile"
+					],
+					"variable": [
+						{
+							"key": "userID",
+							"value": "user123",
+							"description": "User ID"
+						}
+					]
+				},
+				"description": "Delete user profile by ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Identity Status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/v1/users/:userID/identity-status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						":userID",
+						"identity-status"
+					],
+					"variable": [
+						{
+							"key": "userID",
+							"value": "user123",
+							"description": "User ID"
+						}
+					]
+				},
+				"description": "Check if user has completed identity setup"
+			},
+			"response": []
+		},
+		{
+			"name": "Test - Create Multiple Users",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"screenName\": \"alice_trader\",\n  \"birthday\": \"1988-03-20\",\n  \"avatarURL\": \"https://cdn.shell.app/alice.jpg\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/users/alice456/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						"alice456",
+						"profile"
+					]
+				},
+				"description": "Example creating another user profile"
+			},
+			"response": []
+		},
+		{
+			"name": "Test - Invalid Request (Missing Fields)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"screenName\": \"invalid_user\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/users/invalid123/profile",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"users",
+						"invalid123",
+						"profile"
+					]
+				},
+				"description": "Test validation - missing birthday field (should return 400)"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Items",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/v1/items",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"items"
+					]
+				},
+				"description": "Fetch all items"
+			},
+			"response": []
+		},
+		{
+			"name": "Create Item",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Buy QQQ calls\",\n  \"description\": \"0DTE scalp\",\n  \"isCompleted\": false\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/items",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"items"
+					]
+				},
+				"description": "Create a new item"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Item",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Buy QQQ calls\",\n  \"description\": \"Updated details\",\n  \"isCompleted\": true\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/items/:id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"items",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "paste-uuid-here",
+							"description": "Item ID (UUID from create response)"
+						}
+					]
+				},
+				"description": "Update an existing item"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Item",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/v1/items/:id",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"items",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "paste-uuid-here",
+							"description": "Item ID (UUID from create response)"
+						}
+					]
+				},
+				"description": "Delete an item by ID"
+			},
+			"response": []
+		},
+		{
+			"name": "Test - Create Item (Invalid - Missing Name)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"description\": \"This should fail\",\n  \"isCompleted\": false\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/v1/items",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"v1",
+						"items"
+					]
+				},
+				"description": "Test validation - missing name field (should return 400)"
+			},
+			"response": []
+		}
+	]
+}

@@ -174,6 +174,152 @@ app.get('/v1/users/:userID/identity-status', async (req, res) => {
   }
 });
 
+// GET /v1/items - Fetch all items
+app.get('/v1/items', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, description, is_completed, created_at, updated_at FROM items ORDER BY created_at DESC'
+    );
+
+    const items = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      isCompleted: row.is_completed,
+      createdAt: row.created_at.toISOString(),
+      updatedAt: row.updated_at.toISOString()
+    }));
+
+    res.json(items);
+  } catch (error) {
+    console.error('Error fetching items:', error);
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to fetch items'
+    });
+  }
+});
+
+// POST /v1/items - Create a new item
+app.post('/v1/items', async (req, res) => {
+  const { name, description, isCompleted } = req.body;
+
+  // Validation
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({
+      error: 'validation_error',
+      message: 'name is required',
+      field: 'name'
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO items (name, description, is_completed)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, description, is_completed, created_at, updated_at`,
+      [name.trim(), description || null, isCompleted || false]
+    );
+
+    const item = result.rows[0];
+
+    const response = {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      isCompleted: item.is_completed,
+      createdAt: item.created_at.toISOString(),
+      updatedAt: item.updated_at.toISOString()
+    };
+
+    res.status(201).json(response);
+  } catch (error) {
+    console.error('Error creating item:', error);
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to create item'
+    });
+  }
+});
+
+// PUT /v1/items/:id - Update an item
+app.put('/v1/items/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, isCompleted } = req.body;
+
+  // Validation
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({
+      error: 'validation_error',
+      message: 'name is required',
+      field: 'name'
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE items
+       SET name = $1, description = $2, is_completed = $3, updated_at = NOW()
+       WHERE id = $4
+       RETURNING id, name, description, is_completed, created_at, updated_at`,
+      [name.trim(), description || null, isCompleted || false, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'item_not_found',
+        message: 'Item not found'
+      });
+    }
+
+    const item = result.rows[0];
+
+    const response = {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      isCompleted: item.is_completed,
+      createdAt: item.created_at.toISOString(),
+      updatedAt: item.updated_at.toISOString()
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error updating item:', error);
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to update item'
+    });
+  }
+});
+
+// DELETE /v1/items/:id - Delete an item
+app.delete('/v1/items/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM items WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'item_not_found',
+        message: 'Item not found'
+      });
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to delete item'
+    });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
