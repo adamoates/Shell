@@ -105,7 +105,8 @@ final class AppDependencyContainer {
         ProfileCoordinator(
             navigationController: navigationController,
             userID: userID,
-            fetchProfile: makeFetchProfileUseCase()
+            fetchProfile: makeFetchProfileUseCase(),
+            setupIdentity: makeCompleteIdentitySetupUseCase()
         )
     }
 

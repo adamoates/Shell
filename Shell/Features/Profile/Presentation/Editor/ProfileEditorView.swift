@@ -157,7 +157,7 @@ struct LoadingOverlay: View {
 #Preview {
     // Preview with mock ViewModel
     let mockRepository = InMemoryUserProfileRepository()
-    let useCase = SetupIdentityUseCase(repository: mockRepository)
+    let useCase = DefaultCompleteIdentitySetupUseCase(repository: mockRepository)
     let viewModel = ProfileEditorViewModel(
         userID: "preview",
         setupIdentityUseCase: useCase

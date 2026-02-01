@@ -26,7 +26,7 @@ final class ProfileEditorViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let setupIdentityUseCase: SetupIdentityUseCase
+    private let setupIdentityUseCase: CompleteIdentitySetupUseCase
     private let userID: String
 
     // MARK: - Delegate
@@ -41,7 +41,7 @@ final class ProfileEditorViewModel: ObservableObject {
 
     init(
         userID: String,
-        setupIdentityUseCase: SetupIdentityUseCase
+        setupIdentityUseCase: CompleteIdentitySetupUseCase
     ) {
         self.userID = userID
         self.setupIdentityUseCase = setupIdentityUseCase
@@ -67,24 +67,33 @@ final class ProfileEditorViewModel: ObservableObject {
         errorMessage = nil
         isLoading = true
 
-        do {
-            try await setupIdentityUseCase.execute(
-                userID: userID,
-                screenName: screenName,
-                birthday: birthday
-            )
+        // Validate and create identity data
+        let result = IdentityData.create(
+            screenName: screenName,
+            birthday: birthday
+        )
 
+        guard case .success(let identityData) = result else {
+            // Validation failed
+            if case .failure(let error) = result {
+                isLoading = false
+                errorMessage = error.localizedDescription
+                return
+            }
             isLoading = false
-            delegate?.profileEditorDidSave(self)
-
-        } catch let error as IdentityValidationError {
-            isLoading = false
-            errorMessage = error.localizedDescription
-
-        } catch {
-            isLoading = false
-            errorMessage = "An unexpected error occurred"
+            errorMessage = "Invalid input"
+            return
         }
+
+        // Execute use case
+        _ = await setupIdentityUseCase.execute(
+            userID: userID,
+            identityData: identityData,
+            avatarURL: nil
+        )
+
+        isLoading = false
+        delegate?.profileEditorDidSave(self)
     }
 
     func cancel() {

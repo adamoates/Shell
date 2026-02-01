@@ -18,7 +18,7 @@ final class ProfileCoordinator: Coordinator {
     weak var parentCoordinator: Coordinator?
 
     private let fetchProfile: FetchProfileUseCase
-    private let setupIdentity: SetupIdentityUseCase
+    private let setupIdentity: CompleteIdentitySetupUseCase
     private let userID: String
 
     // MARK: - Init
@@ -27,7 +27,7 @@ final class ProfileCoordinator: Coordinator {
         navigationController: UINavigationController,
         userID: String,
         fetchProfile: FetchProfileUseCase,
-        setupIdentity: SetupIdentityUseCase
+        setupIdentity: CompleteIdentitySetupUseCase
     ) {
         self.navigationController = navigationController
         self.userID = userID
