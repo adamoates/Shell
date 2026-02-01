@@ -25,6 +25,55 @@ protocol Validator {
     func validate(_ value: Value) -> Result<Value, ValidationError>
 }
 
+// MARK: - Type Erasure for Composition
+
+/// Type-erased validation error
+/// Wraps any validator's specific error type for composition
+enum AnyValidationError: Error, Equatable {
+    case wrapped(String, underlyingError: String)
+
+    init(wrapping error: Error) {
+        let typeName = String(describing: type(of: error))
+        let description = (error as? LocalizedError)?.errorDescription
+            ?? error.localizedDescription
+        self = .wrapped(typeName, underlyingError: description)
+    }
+
+    var localizedDescription: String {
+        if case .wrapped(_, let description) = self {
+            return description
+        }
+        return "Validation failed"
+    }
+
+    static func == (lhs: AnyValidationError, rhs: AnyValidationError) -> Bool {
+        lhs.localizedDescription == rhs.localizedDescription
+    }
+}
+
+/// Type-erased validator wrapper
+/// Allows composition of validators with different error types
+struct AnyValidator<Value>: Validator {
+    typealias ValidationError = AnyValidationError
+
+    private let _validate: (Value) -> Result<Value, AnyValidationError>
+
+    init<V: Validator>(_ validator: V) where V.Value == Value {
+        self._validate = { value in
+            validator.validate(value)
+                .mapError { AnyValidationError(wrapping: $0) }
+        }
+    }
+
+    init(_ validate: @escaping (Value) -> Result<Value, AnyValidationError>) {
+        self._validate = validate
+    }
+
+    func validate(_ value: Value) -> Result<Value, AnyValidationError> {
+        _validate(value)
+    }
+}
+
 // MARK: - Validator Composition
 
 extension Validator {
@@ -35,6 +84,30 @@ extension Validator {
     func and<V: Validator>(_ other: V) -> ComposedValidator<Self, V>
     where V.Value == Value, V.ValidationError == ValidationError {
         ComposedValidator(first: self, second: other)
+    }
+
+    /// Combine with another validator (different error types)
+    /// Uses type erasure to enable composition of heterogeneous validators
+    /// - Parameter other: The validator to combine with
+    /// - Returns: A type-erased composed validator
+    func and<V: Validator>(_ other: V) -> AnyValidator<Value>
+    where V.Value == Value {
+        let first = AnyValidator(self)
+        let second = AnyValidator(other)
+        return AnyValidator { value in
+            switch first.validate(value) {
+            case .success(let validated):
+                return second.validate(validated)
+            case .failure(let error):
+                return .failure(error)
+            }
+        }
+    }
+
+    /// Convert any validator to type-erased form
+    /// - Returns: A type-erased validator
+    func eraseToAnyValidator() -> AnyValidator<Value> {
+        AnyValidator(self)
     }
 }
 
