@@ -63,11 +63,6 @@
 			path = ShellUITests;
 			sourceTree = "<group>";
 		};
-		70334DD12F2C94410071E3E6 /* .claude */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = .claude;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,7 +98,6 @@
 				70334DB42F2C938D0071E3E6 /* ShellTests */,
 				70334DBE2F2C938D0071E3E6 /* ShellUITests */,
 				70334D982F2C938B0071E3E6 /* Products */,
-				70334DD12F2C94410071E3E6 /* .claude */,
 				703351552F2EAC1A0071E3E6 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -189,7 +183,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				70334DBE2F2C938D0071E3E6 /* ShellUITests */,
-				70334DD12F2C94410071E3E6 /* .claude */,
 			);
 			name = ShellUITests;
 			packageProductDependencies = (
