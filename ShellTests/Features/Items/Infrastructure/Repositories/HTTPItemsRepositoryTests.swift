@@ -22,7 +22,7 @@ final class HTTPItemsRepositoryTests: XCTestCase {
 
         let httpClient = URLSessionItemsHTTPClient(
             session: mockURLSession,
-            baseURL: URL(string: "http://localhost:3000")!
+            baseURL: URL(string: "http://localhost:3000/v1")!
         )
         repository = HTTPItemsRepository(httpClient: httpClient)
 

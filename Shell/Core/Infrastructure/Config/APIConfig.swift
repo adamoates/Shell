@@ -26,7 +26,7 @@ struct APIConfig {
 
     /// Local development configuration
     static let local = APIConfig(
-        baseURL: URL(string: "http://localhost:3000")!,
+        baseURL: URL(string: "http://localhost:3000/v1")!,
         authToken: nil
     )
 
