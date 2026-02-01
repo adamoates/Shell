@@ -66,10 +66,11 @@ final class UpdateItemUseCaseTests: XCTestCase {
         // Add existing item to repository
         let existingItem = Item(
             id: testItemID,
-            title: "Original Title",
-            subtitle: "Original Subtitle",
+            name: "Original Name",
             description: "Original Description",
-            date: Date().addingTimeInterval(-86400) // 1 day ago
+            isCompleted: false,
+            createdAt: Date().addingTimeInterval(-86400), // 1 day ago
+            updatedAt: Date().addingTimeInterval(-86400)
         )
         await mockRepository.addExistingItem(existingItem)
 
@@ -86,75 +87,61 @@ final class UpdateItemUseCaseTests: XCTestCase {
 
     func testExecute_withValidData_updatesItem() async throws {
         // Arrange
-        let newTitle = "Updated Title"
-        let newSubtitle = "Updated Subtitle"
+        let newName = "Updated Name"
         let newDescription = "Updated Description"
+        let newIsCompleted = true
 
         // Act
         let result = try await sut.execute(
             id: testItemID,
-            title: newTitle,
-            subtitle: newSubtitle,
-            description: newDescription
+            name: newName,
+            description: newDescription,
+            isCompleted: newIsCompleted
         )
 
         // Assert
         XCTAssertEqual(result.id, testItemID)
-        XCTAssertEqual(result.title, newTitle)
-        XCTAssertEqual(result.subtitle, newSubtitle)
+        XCTAssertEqual(result.name, newName)
         XCTAssertEqual(result.description, newDescription)
+        XCTAssertEqual(result.isCompleted, newIsCompleted)
+        XCTAssertNotNil(result.createdAt)
+        XCTAssertNotNil(result.updatedAt)
 
         let repositoryCalled = await mockRepository.updateCalled
         XCTAssertTrue(repositoryCalled, "Should call repository.update()")
     }
 
-    func testExecute_preservesOriginalDate() async throws {
+    func testExecute_preservesOriginalCreatedAt() async throws {
         // Arrange
-        let originalDate = await mockRepository.existingItems.first?.date
+        let originalCreatedAt = await mockRepository.existingItems.first?.createdAt
 
         // Act
         let result = try await sut.execute(
             id: testItemID,
-            title: "New Title",
-            subtitle: "New Subtitle",
-            description: "New Description"
+            name: "New Name",
+            description: "New Description",
+            isCompleted: true
         )
 
         // Assert
-        XCTAssertEqual(result.date, originalDate, "Should preserve original creation date")
+        XCTAssertEqual(result.createdAt, originalCreatedAt, "Should preserve original creation date")
+        XCTAssertNotEqual(result.updatedAt, result.createdAt, "Should update updatedAt timestamp")
     }
 
     // MARK: - Tests: Validation Failures
 
-    func testExecute_withEmptyTitle_throwsValidationError() async {
+    func testExecute_withEmptyName_throwsValidationError() async {
         // Act & Assert
         do {
             _ = try await sut.execute(
                 id: testItemID,
-                title: "",
-                subtitle: "Subtitle",
-                description: "Description"
+                name: "",
+                description: "Description",
+                isCompleted: false
             )
             XCTFail("Should throw validation error")
         } catch ItemError.validationFailed(let message) {
-            XCTAssertEqual(message, "Title cannot be empty")
-        } catch {
-            XCTFail("Should throw ItemError.validationFailed")
-        }
-    }
-
-    func testExecute_withEmptySubtitle_throwsValidationError() async {
-        // Act & Assert
-        do {
-            _ = try await sut.execute(
-                id: testItemID,
-                title: "Title",
-                subtitle: "",
-                description: "Description"
-            )
-            XCTFail("Should throw validation error")
-        } catch ItemError.validationFailed(let message) {
-            XCTAssertEqual(message, "Subtitle cannot be empty")
+            XCTAssertEqual(message, "Name cannot be empty")
         } catch {
             XCTFail("Should throw ItemError.validationFailed")
         }
@@ -165,9 +152,9 @@ final class UpdateItemUseCaseTests: XCTestCase {
         do {
             _ = try await sut.execute(
                 id: testItemID,
-                title: "Title",
-                subtitle: "Subtitle",
-                description: ""
+                name: "Name",
+                description: "",
+                isCompleted: false
             )
             XCTFail("Should throw validation error")
         } catch ItemError.validationFailed(let message) {
@@ -187,9 +174,9 @@ final class UpdateItemUseCaseTests: XCTestCase {
         do {
             _ = try await sut.execute(
                 id: nonExistentID,
-                title: "Title",
-                subtitle: "Subtitle",
-                description: "Description"
+                name: "Name",
+                description: "Description",
+                isCompleted: false
             )
             XCTFail("Should throw not found error")
         } catch ItemError.notFound {
@@ -209,9 +196,9 @@ final class UpdateItemUseCaseTests: XCTestCase {
         do {
             _ = try await sut.execute(
                 id: testItemID,
-                title: "Title",
-                subtitle: "Subtitle",
-                description: "Description"
+                name: "Name",
+                description: "Description",
+                isCompleted: false
             )
             XCTFail("Should propagate repository error")
         } catch ItemError.updateFailed {

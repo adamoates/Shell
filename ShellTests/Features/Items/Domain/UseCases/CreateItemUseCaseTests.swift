@@ -71,22 +71,24 @@ final class CreateItemUseCaseTests: XCTestCase {
 
     func testExecute_withValidData_createsItem() async throws {
         // Arrange
-        let title = "Test Item"
-        let subtitle = "Test Subtitle"
+        let name = "Test Item"
         let description = "Test Description"
+        let isCompleted = false
 
         // Act
         let result = try await sut.execute(
-            title: title,
-            subtitle: subtitle,
-            description: description
+            name: name,
+            description: description,
+            isCompleted: isCompleted
         )
 
         // Assert
-        XCTAssertEqual(result.title, title)
-        XCTAssertEqual(result.subtitle, subtitle)
+        XCTAssertEqual(result.name, name)
         XCTAssertEqual(result.description, description)
+        XCTAssertEqual(result.isCompleted, isCompleted)
         XCTAssertFalse(result.id.isEmpty)
+        XCTAssertNotNil(result.createdAt)
+        XCTAssertNotNil(result.updatedAt)
 
         let repositoryCalled = await mockRepository.createCalled
         XCTAssertTrue(repositoryCalled, "Should call repository.create()")
@@ -94,87 +96,80 @@ final class CreateItemUseCaseTests: XCTestCase {
 
     func testExecute_withValidData_callsRepository() async throws {
         // Arrange
-        let title = "Test"
-        let subtitle = "Subtitle"
+        let name = "Test"
         let description = "Description"
+        let isCompleted = true
 
         // Act
         _ = try await sut.execute(
-            title: title,
-            subtitle: subtitle,
-            description: description
+            name: name,
+            description: description,
+            isCompleted: isCompleted
         )
 
         // Assert
         let createdItem = await mockRepository.createdItem
         XCTAssertNotNil(createdItem)
-        XCTAssertEqual(createdItem?.title, title)
-        XCTAssertEqual(createdItem?.subtitle, subtitle)
+        XCTAssertEqual(createdItem?.name, name)
         XCTAssertEqual(createdItem?.description, description)
+        XCTAssertEqual(createdItem?.isCompleted, isCompleted)
+    }
+
+    func testExecute_withDefaultIsCompleted_createsPendingItem() async throws {
+        // Arrange
+        let name = "Test Item"
+        let description = "Description"
+
+        // Act
+        let result = try await sut.execute(
+            name: name,
+            description: description,
+            isCompleted: false
+        )
+
+        // Assert
+        XCTAssertFalse(result.isCompleted, "Default isCompleted should be false")
     }
 
     // MARK: - Tests: Validation Failures
 
-    func testExecute_withEmptyTitle_throwsValidationError() async {
+    func testExecute_withEmptyName_throwsValidationError() async {
         // Arrange
-        let title = ""
-        let subtitle = "Subtitle"
+        let name = ""
         let description = "Description"
 
         // Act & Assert
         do {
             _ = try await sut.execute(
-                title: title,
-                subtitle: subtitle,
-                description: description
+                name: name,
+                description: description,
+                isCompleted: false
             )
             XCTFail("Should throw validation error")
         } catch ItemError.validationFailed(let message) {
-            XCTAssertEqual(message, "Title cannot be empty")
+            XCTAssertEqual(message, "Name cannot be empty")
         } catch {
-            XCTFail("Should throw ItemError.validationFailed")
-        }
-    }
-
-    func testExecute_withEmptySubtitle_throwsValidationError() async {
-        // Arrange
-        let title = "Title"
-        let subtitle = ""
-        let description = "Description"
-
-        // Act & Assert
-        do {
-            _ = try await sut.execute(
-                title: title,
-                subtitle: subtitle,
-                description: description
-            )
-            XCTFail("Should throw validation error")
-        } catch ItemError.validationFailed(let message) {
-            XCTAssertEqual(message, "Subtitle cannot be empty")
-        } catch {
-            XCTFail("Should throw ItemError.validationFailed")
+            XCTFail("Should throw ItemError.validationFailed, got \(error)")
         }
     }
 
     func testExecute_withEmptyDescription_throwsValidationError() async {
         // Arrange
-        let title = "Title"
-        let subtitle = "Subtitle"
+        let name = "Name"
         let description = ""
 
         // Act & Assert
         do {
             _ = try await sut.execute(
-                title: title,
-                subtitle: subtitle,
-                description: description
+                name: name,
+                description: description,
+                isCompleted: false
             )
             XCTFail("Should throw validation error")
         } catch ItemError.validationFailed(let message) {
             XCTAssertEqual(message, "Description cannot be empty")
         } catch {
-            XCTFail("Should throw ItemError.validationFailed")
+            XCTFail("Should throw ItemError.validationFailed, got \(error)")
         }
     }
 
@@ -187,15 +182,15 @@ final class CreateItemUseCaseTests: XCTestCase {
         // Act & Assert
         do {
             _ = try await sut.execute(
-                title: "Title",
-                subtitle: "Subtitle",
-                description: "Description"
+                name: "Name",
+                description: "Description",
+                isCompleted: false
             )
             XCTFail("Should propagate repository error")
         } catch ItemError.createFailed {
             // Success: error propagated
         } catch {
-            XCTFail("Should throw ItemError.createFailed")
+            XCTFail("Should throw ItemError.createFailed, got \(error)")
         }
     }
 }

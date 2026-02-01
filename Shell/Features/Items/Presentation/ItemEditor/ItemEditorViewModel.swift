@@ -24,9 +24,9 @@ final class ItemEditorViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    @Published var title: String = ""
-    @Published var subtitle: String = ""
+    @Published var name: String = ""
     @Published var itemDescription: String = ""
+    @Published var isCompleted: Bool = false
     @Published var isSaving: Bool = false
     @Published var errorMessage: String?
 
@@ -59,9 +59,9 @@ final class ItemEditorViewModel: ObservableObject {
 
         // Pre-populate fields if editing
         if let item = itemToEdit {
-            self.title = item.title
-            self.subtitle = item.subtitle
+            self.name = item.name
             self.itemDescription = item.description
+            self.isCompleted = item.isCompleted
         }
     }
 
@@ -98,16 +98,16 @@ final class ItemEditorViewModel: ObservableObject {
                 // Edit mode: update existing item
                 savedItem = try await updateItem.execute(
                     id: existingItem.id,
-                    title: title,
-                    subtitle: subtitle,
-                    description: itemDescription
+                    name: name,
+                    description: itemDescription,
+                    isCompleted: isCompleted
                 )
             } else {
                 // Create mode: create new item
                 savedItem = try await createItem.execute(
-                    title: title,
-                    subtitle: subtitle,
-                    description: itemDescription
+                    name: name,
+                    description: itemDescription,
+                    isCompleted: isCompleted
                 )
             }
 
@@ -128,13 +128,8 @@ final class ItemEditorViewModel: ObservableObject {
     }
 
     private func validate() -> Bool {
-        if title.trimmingCharacters(in: .whitespaces).isEmpty {
-            errorMessage = "Title cannot be empty"
-            return false
-        }
-
-        if subtitle.trimmingCharacters(in: .whitespaces).isEmpty {
-            errorMessage = "Subtitle cannot be empty"
+        if name.trimmingCharacters(in: .whitespaces).isEmpty {
+            errorMessage = "Name cannot be empty"
             return false
         }
 

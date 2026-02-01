@@ -62,9 +62,10 @@ final class FetchItemsUseCaseTests: XCTestCase {
         }
 
         XCTAssertFalse(firstItem.id.isEmpty, "Item should have valid ID")
-        XCTAssertFalse(firstItem.title.isEmpty, "Item should have title")
-        XCTAssertFalse(firstItem.subtitle.isEmpty, "Item should have subtitle")
+        XCTAssertFalse(firstItem.name.isEmpty, "Item should have name")
         XCTAssertFalse(firstItem.description.isEmpty, "Item should have description")
+        XCTAssertNotNil(firstItem.createdAt, "Item should have createdAt date")
+        XCTAssertNotNil(firstItem.updatedAt, "Item should have updatedAt date")
     }
 
     // TEMPORARY: Disabled due to testmanagerd crash
@@ -90,8 +91,8 @@ final class FetchItemsUseCaseTests: XCTestCase {
         }
 
         XCTAssertEqual(firstItem.id, "1")
-        XCTAssertEqual(firstItem.title, "Welcome to Shell")
-        XCTAssertEqual(firstItem.subtitle, "Getting Started")
+        XCTAssertEqual(firstItem.name, "Welcome to Shell")
+        XCTAssertEqual(firstItem.description, "This is a demonstration of proper Storyboard layout with Auto Layout constraints that adapt to all device sizes and Dynamic Type settings.")
     }
 
     // MARK: - Performance Tests
@@ -128,41 +129,47 @@ private actor MockItemsRepository: ItemsRepository {
         // Simulate network delay
         try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
 
+        let now = Date()
         return await [
             Item(
                 id: "1",
-                title: "Welcome to Shell",
-                subtitle: "Getting Started",
+                name: "Welcome to Shell",
                 description: "This is a demonstration of proper Storyboard layout with Auto Layout constraints that adapt to all device sizes and Dynamic Type settings.",
-                date: Date()
+                isCompleted: false,
+                createdAt: now,
+                updatedAt: now
             ),
             Item(
                 id: "2",
-                title: "Adaptive Layouts",
-                subtitle: "Size Classes",
+                name: "Adaptive Layouts",
                 description: "These constraints work perfectly across all devices from iPhone SE to iPad Pro, in both portrait and landscape orientations.",
-                date: Date().addingTimeInterval(-3600)
+                isCompleted: true,
+                createdAt: now.addingTimeInterval(-3600),
+                updatedAt: now.addingTimeInterval(-3600)
             ),
             Item(
                 id: "3",
-                title: "Dynamic Type",
-                subtitle: "Accessibility",
+                name: "Dynamic Type",
                 description: "All text scales properly with Dynamic Type. Try changing text size in Settings > Accessibility > Display & Text Size.",
-                date: Date().addingTimeInterval(-7200)
+                isCompleted: false,
+                createdAt: now.addingTimeInterval(-7200),
+                updatedAt: now.addingTimeInterval(-7200)
             ),
             Item(
                 id: "4",
-                title: "Stack Views",
-                subtitle: "Layout Technique",
+                name: "Stack Views",
                 description: "Using stack views with proper content hugging and compression resistance priorities ensures clean, maintainable layouts.",
-                date: Date().addingTimeInterval(-86400)
+                isCompleted: true,
+                createdAt: now.addingTimeInterval(-86400),
+                updatedAt: now.addingTimeInterval(-86400)
             ),
             Item(
                 id: "5",
-                title: "Pull to Refresh",
-                subtitle: "iOS Pattern",
+                name: "Pull to Refresh",
                 description: "This list demonstrates pull-to-refresh, a common iOS UI pattern for updating content.",
-                date: Date().addingTimeInterval(-172800)
+                isCompleted: false,
+                createdAt: now.addingTimeInterval(-172800),
+                updatedAt: now.addingTimeInterval(-172800)
             )
         ]
     }

@@ -31,9 +31,9 @@ class DetailViewController: UIViewController {
         return label
     }()
 
-    private lazy var subtitleLabel: UILabel = {
+    private lazy var statusLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.font = .systemFont(ofSize: 17, weight: .semibold)
         label.textColor = .secondaryLabel
         label.textAlignment = .left
         label.numberOfLines = 0
@@ -82,7 +82,7 @@ class DetailViewController: UIViewController {
     private lazy var contentStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
             titleLabel,
-            subtitleLabel,
+            statusLabel,
             dateLabel,
             dividerView,
             descriptionLabel,
@@ -159,19 +159,29 @@ class DetailViewController: UIViewController {
     }
 
     private func configureWithItem() {
-        titleLabel.text = item.title
-        subtitleLabel.text = item.subtitle
+        titleLabel.text = item.name
+        statusLabel.text = item.isCompleted ? "✓ Completed" : "◯ Not Completed"
+        statusLabel.textColor = item.isCompleted ? .systemGreen : .systemOrange
         descriptionLabel.text = item.description
 
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
-        dateLabel.text = formatter.string(from: item.date)
+        dateLabel.text = "Created: \(formatter.string(from: item.createdAt))"
+
+        // Update button based on completion status
+        if item.isCompleted {
+            actionButton.setTitle("Mark as Incomplete", for: .normal)
+            actionButton.backgroundColor = .systemOrange
+        } else {
+            actionButton.setTitle("Mark as Complete", for: .normal)
+            actionButton.backgroundColor = .systemGreen
+        }
 
         // Update accessibility
-        titleLabel.accessibilityLabel = item.title
-        subtitleLabel.accessibilityLabel = item.subtitle
-        dateLabel.accessibilityLabel = "Date: \(formatter.string(from: item.date))"
+        titleLabel.accessibilityLabel = item.name
+        statusLabel.accessibilityLabel = item.isCompleted ? "Completed" : "Not completed"
+        dateLabel.accessibilityLabel = "Created: \(formatter.string(from: item.createdAt))"
         descriptionLabel.accessibilityLabel = item.description
     }
 

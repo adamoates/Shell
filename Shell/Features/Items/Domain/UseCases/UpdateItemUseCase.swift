@@ -15,7 +15,7 @@ import Foundation
 /// - Delegate persistence to ItemsRepository
 /// - Return updated item or error
 protocol UpdateItemUseCase {
-    func execute(id: String, title: String, subtitle: String, description: String) async throws -> Item
+    func execute(id: String, name: String, description: String, isCompleted: Bool) async throws -> Item
 }
 
 final class DefaultUpdateItemUseCase: UpdateItemUseCase {
@@ -32,33 +32,30 @@ final class DefaultUpdateItemUseCase: UpdateItemUseCase {
 
     // MARK: - UpdateItemUseCase
 
-    func execute(id: String, title: String, subtitle: String, description: String) async throws -> Item {
+    func execute(id: String, name: String, description: String, isCompleted: Bool) async throws -> Item {
         // Validate inputs
-        guard !title.isEmpty else {
-            throw ItemError.validationFailed("Title cannot be empty")
-        }
-
-        guard !subtitle.isEmpty else {
-            throw ItemError.validationFailed("Subtitle cannot be empty")
+        guard !name.isEmpty else {
+            throw ItemError.validationFailed("Name cannot be empty")
         }
 
         guard !description.isEmpty else {
             throw ItemError.validationFailed("Description cannot be empty")
         }
 
-        // Fetch existing item to preserve other fields
+        // Fetch existing item to preserve createdAt
         let items = try await repository.fetchAll()
         guard let existingItem = items.first(where: { $0.id == id }) else {
             throw ItemError.notFound
         }
 
-        // Create updated item
+        // Create updated item (preserve createdAt, update updatedAt)
         let updatedItem = Item(
             id: existingItem.id,
-            title: title,
-            subtitle: subtitle,
+            name: name,
             description: description,
-            date: existingItem.date // Preserve original date
+            isCompleted: isCompleted,
+            createdAt: existingItem.createdAt, // Preserve original creation date
+            updatedAt: Date() // Set to now
         )
 
         // Persist via repository

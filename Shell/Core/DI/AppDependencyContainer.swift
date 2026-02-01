@@ -44,7 +44,20 @@ final class AppDependencyContainer {
 
     /// Shared items repository (singleton pattern)
     /// Items data must be shared across the app
-    private lazy var sharedItemsRepository: ItemsRepository = InMemoryItemsRepository()
+    /// Uses feature flag to switch between in-memory and HTTP implementation
+    private lazy var sharedItemsRepository: ItemsRepository = {
+        if RepositoryConfig.useHTTPItemsRepository {
+            // Use HTTP repository with backend API
+            let httpClient = URLSessionItemsHTTPClient(
+                session: .shared,
+                baseURL: APIConfig.current.baseURL
+            )
+            return HTTPItemsRepository(httpClient: httpClient)
+        } else {
+            // Use in-memory repository for offline development
+            return InMemoryItemsRepository()
+        }
+    }()
 
     // MARK: - Boot Factory
 

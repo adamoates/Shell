@@ -281,13 +281,15 @@ final class ListViewModelTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func createSampleItems(count: Int) -> [Item] {
+        let now = Date()
         return (1...count).map { index in
             Item(
                 id: "\(index)",
-                title: "Item \(index)",
-                subtitle: "Subtitle \(index)",
+                name: "Item \(index)",
                 description: "Description \(index)",
-                date: Date()
+                isCompleted: false,
+                createdAt: now,
+                updatedAt: now
             )
         }
     }

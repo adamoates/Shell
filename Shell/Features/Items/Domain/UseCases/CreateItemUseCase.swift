@@ -14,7 +14,7 @@ import Foundation
 /// - Delegate persistence to ItemsRepository
 /// - Return created item or error
 protocol CreateItemUseCase {
-    func execute(title: String, subtitle: String, description: String) async throws -> Item
+    func execute(name: String, description: String, isCompleted: Bool) async throws -> Item
 }
 
 final class DefaultCreateItemUseCase: CreateItemUseCase {
@@ -31,14 +31,10 @@ final class DefaultCreateItemUseCase: CreateItemUseCase {
 
     // MARK: - CreateItemUseCase
 
-    func execute(title: String, subtitle: String, description: String) async throws -> Item {
+    func execute(name: String, description: String, isCompleted: Bool = false) async throws -> Item {
         // Validate inputs
-        guard !title.isEmpty else {
-            throw ItemError.validationFailed("Title cannot be empty")
-        }
-
-        guard !subtitle.isEmpty else {
-            throw ItemError.validationFailed("Subtitle cannot be empty")
+        guard !name.isEmpty else {
+            throw ItemError.validationFailed("Name cannot be empty")
         }
 
         guard !description.isEmpty else {
@@ -46,12 +42,14 @@ final class DefaultCreateItemUseCase: CreateItemUseCase {
         }
 
         // Create item
+        let now = Date()
         let newItem = Item(
             id: UUID().uuidString,
-            title: title,
-            subtitle: subtitle,
+            name: name,
             description: description,
-            date: Date()
+            isCompleted: isCompleted,
+            createdAt: now,
+            updatedAt: now
         )
 
         // Persist via repository
@@ -60,7 +58,7 @@ final class DefaultCreateItemUseCase: CreateItemUseCase {
 }
 
 /// Errors that can occur during item operations
-public enum ItemError: LocalizedError {
+public enum ItemError: LocalizedError, Equatable {
     case validationFailed(String)
     case notFound
     case createFailed

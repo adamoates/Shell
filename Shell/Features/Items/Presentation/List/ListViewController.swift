@@ -250,18 +250,21 @@ extension ListViewController: UITableViewDataSource {
         let item = viewModel.items[indexPath.row]
 
         var content = cell.defaultContentConfiguration()
-        content.text = item.title
-        content.secondaryText = item.subtitle
+        content.text = item.name
+        content.secondaryText = item.description
         content.textProperties.font = .preferredFont(forTextStyle: .headline)
         content.secondaryTextProperties.font = .preferredFont(forTextStyle: .subheadline)
         content.textProperties.adjustsFontForContentSizeCategory = true
         content.secondaryTextProperties.adjustsFontForContentSizeCategory = true
 
         cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
+
+        // Show checkmark if completed
+        cell.accessoryType = item.isCompleted ? .checkmark : .disclosureIndicator
 
         // Accessibility
-        cell.accessibilityLabel = "\(item.title), \(item.subtitle)"
+        let completionStatus = item.isCompleted ? "completed" : "not completed"
+        cell.accessibilityLabel = "\(item.name), \(completionStatus)"
         cell.accessibilityHint = "Double tap to view details"
 
         return cell
@@ -292,7 +295,7 @@ extension ListViewController: UITableViewDelegate {
             }
 
             let activityVC = UIActivityViewController(
-                activityItems: [item.title, item.description],
+                activityItems: [item.name, item.description],
                 applicationActivities: nil
             )
             self?.present(activityVC, animated: true)

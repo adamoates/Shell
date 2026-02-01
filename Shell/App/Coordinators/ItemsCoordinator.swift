@@ -125,7 +125,7 @@ extension ItemsCoordinator: ListViewControllerDelegate {
     }
 
     func listViewController(_ controller: ListViewController, didSelectItem item: Item) {
-        print("✅ ItemsCoordinator: Item selected - \(item.title)")
+        print("✅ ItemsCoordinator: Item selected - \(item.name)")
         showDetail(for: item)
     }
 
@@ -145,7 +145,7 @@ extension ItemsCoordinator: ListViewControllerDelegate {
     }
 
     func listViewController(_ controller: ListViewController, didRequestEditItem item: Item) {
-        print("✅ ItemsCoordinator: Edit item requested - \(item.title)")
+        print("✅ ItemsCoordinator: Edit item requested - \(item.name)")
         showEditItem(item)
     }
 }
