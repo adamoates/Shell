@@ -34,7 +34,7 @@ actor Observable<Event> {
     /// This is crucial for memory safety - observers are held weakly
     private struct WeakObserver {
         weak var observer: AnyObject?
-        let notify: (Event) -> Void
+        let notify: (Event) async -> Void
 
         var isAlive: Bool {
             observer != nil
@@ -61,7 +61,7 @@ actor Observable<Event> {
         let weakObserver = WeakObserver(
             observer: observer,
             notify: { [weak observer] event in
-                observer?.handleEvent(event)
+                await observer?.handleEvent(event)
             }
         )
 
@@ -83,15 +83,19 @@ actor Observable<Event> {
     /// Notify all observers of an event
     /// Automatically cleans up deallocated observers
     /// - Parameter event: The event to send to observers
-    func notifyObservers(_ event: Event) {
+    func notifyObservers(_ event: Event) async {
         // Clean up deallocated observers
         observers = observers.filter { _, weakObserver in
             weakObserver.isAlive
         }
 
         // Notify remaining observers
-        for weakObserver in observers.values {
-            weakObserver.notify(event)
+        await withTaskGroup(of: Void.self) { group in
+            for weakObserver in observers.values {
+                group.addTask {
+                    await weakObserver.notify(event)
+                }
+            }
         }
     }
 
@@ -113,7 +117,7 @@ actor Observable<Event> {
 final class ObservationToken: Sendable {
     private let cancellationClosure: @Sendable () -> Void
 
-    init(cancellationClosure: @escaping @Sendable () -> Void) {
+    nonisolated init(cancellationClosure: @escaping @Sendable () -> Void) {
         self.cancellationClosure = cancellationClosure
     }
 

@@ -9,6 +9,7 @@ import XCTest
 import Combine
 @testable import Shell
 
+@MainActor
 final class LoginViewModelTests: XCTestCase {
 
     private var sut: LoginViewModel!

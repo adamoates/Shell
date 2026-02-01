@@ -20,7 +20,8 @@ protocol LoginViewModelDelegate: AnyObject {
 /// - Hold username and password state
 /// - Validate credentials using ValidateCredentialsUseCase
 /// - Communicate validation errors and success to the view
-final class LoginViewModel {
+@MainActor
+final class LoginViewModel: ObservableObject {
     // MARK: - Properties
 
     /// Username input
