@@ -58,7 +58,7 @@ final class DefaultCreateItemUseCase: CreateItemUseCase {
 }
 
 /// Errors that can occur during item operations
-public enum ItemError: LocalizedError {
+public enum ItemError: LocalizedError, Equatable {
     case validationFailed(String)
     case notFound
     case createFailed
