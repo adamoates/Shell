@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import Combine
 @testable import Shell
 
 @MainActor
@@ -26,35 +27,52 @@ final class ProfileEditorViewModelTests: XCTestCase {
         }
     }
 
-    class SpySetupIdentityUseCase: SetupIdentityUseCase {
-        var executeCalled = false
-        var capturedScreenName: String?
-        var capturedBirthday: Date?
-        var shouldThrowError: IdentityValidationError?
+    final class SpyCompleteIdentitySetupUseCase: CompleteIdentitySetupUseCase {
+        private(set) var executeCalled = false
+        private(set) var receivedUserID: String?
+        private(set) var receivedIdentityData: IdentityData?
+        private(set) var receivedAvatarURL: URL?
+        var profileToReturn: UserProfile?
 
-        override func execute(userID: String, screenName: String, birthday: Date) async throws {
+        func execute(
+            userID: String,
+            identityData: IdentityData,
+            avatarURL: URL?
+        ) async -> UserProfile {
             executeCalled = true
-            capturedScreenName = screenName
-            capturedBirthday = birthday
+            receivedUserID = userID
+            receivedIdentityData = identityData
+            receivedAvatarURL = avatarURL
 
-            if let error = shouldThrowError {
-                throw error
-            }
+            // Return provided profile or create a default one
+            return profileToReturn ?? UserProfile(
+                userID: userID,
+                screenName: identityData.screenName,
+                birthday: identityData.birthday,
+                avatarURL: avatarURL,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        }
+
+        func reset() {
+            executeCalled = false
+            receivedUserID = nil
+            receivedIdentityData = nil
+            receivedAvatarURL = nil
         }
     }
 
     // MARK: - Properties
 
-    var repository: InMemoryUserProfileRepository!
-    var spyUseCase: SpySetupIdentityUseCase!
+    var spyUseCase: SpyCompleteIdentitySetupUseCase!
     var mockDelegate: MockDelegate!
     var viewModel: ProfileEditorViewModel!
 
     // MARK: - Setup
 
     override func setUp() async throws {
-        repository = InMemoryUserProfileRepository()
-        spyUseCase = SpySetupIdentityUseCase(repository: repository)
+        spyUseCase = SpyCompleteIdentitySetupUseCase()
         mockDelegate = MockDelegate()
 
         viewModel = ProfileEditorViewModel(
@@ -68,7 +86,6 @@ final class ProfileEditorViewModelTests: XCTestCase {
         viewModel = nil
         mockDelegate = nil
         spyUseCase = nil
-        repository = nil
     }
 
     // MARK: - Initial State Tests
@@ -132,8 +149,10 @@ final class ProfileEditorViewModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(spyUseCase.executeCalled)
-        XCTAssertEqual(spyUseCase.capturedScreenName, "john_doe")
-        XCTAssertNotNil(spyUseCase.capturedBirthday)
+        XCTAssertEqual(spyUseCase.receivedUserID, "test-user")
+        XCTAssertEqual(spyUseCase.receivedIdentityData?.screenName, "john_doe")
+        XCTAssertNotNil(spyUseCase.receivedIdentityData?.birthday)
+        XCTAssertNil(spyUseCase.receivedAvatarURL)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertTrue(mockDelegate.didSaveCalled)
@@ -142,6 +161,7 @@ final class ProfileEditorViewModelTests: XCTestCase {
     func testSaveShowsLoadingDuringExecution() async {
         // Given
         viewModel.screenName = "john"
+        viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 20) // 20 years ago
 
         // When
         let saveTask = Task {
@@ -157,18 +177,18 @@ final class ProfileEditorViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
     }
 
-    // MARK: - Save Failure Tests
+    // MARK: - Save Failure Tests (Validation in ViewModel)
 
     func testSaveFailureWithScreenNameTooShort() async {
         // Given
-        spyUseCase.shouldThrowError = .screenNameTooShort
         viewModel.screenName = "a"
+        viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 20) // 20 years ago
 
         // When
         await viewModel.save()
 
-        // Then
-        XCTAssertTrue(spyUseCase.executeCalled)
+        // Then - validation fails before calling use case
+        XCTAssertFalse(spyUseCase.executeCalled)
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertEqual(viewModel.errorMessage, "Screen name must be at least 2 characters")
         XCTAssertFalse(mockDelegate.didSaveCalled)
@@ -176,26 +196,28 @@ final class ProfileEditorViewModelTests: XCTestCase {
 
     func testSaveFailureWithScreenNameTooLong() async {
         // Given
-        spyUseCase.shouldThrowError = .screenNameTooLong
         viewModel.screenName = "this_is_a_very_long_screen_name_that_exceeds_limit"
+        viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 20) // 20 years ago
 
         // When
         await viewModel.save()
 
-        // Then
+        // Then - validation fails before calling use case
+        XCTAssertFalse(spyUseCase.executeCalled)
         XCTAssertEqual(viewModel.errorMessage, "Screen name must be 20 characters or less")
         XCTAssertFalse(mockDelegate.didSaveCalled)
     }
 
     func testSaveFailureWithInvalidCharacters() async {
         // Given
-        spyUseCase.shouldThrowError = .screenNameInvalidCharacters
         viewModel.screenName = "john@doe"
+        viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 20) // 20 years ago
 
         // When
         await viewModel.save()
 
-        // Then
+        // Then - validation fails before calling use case
+        XCTAssertFalse(spyUseCase.executeCalled)
         XCTAssertEqual(
             viewModel.errorMessage,
             "Screen name can only contain letters, numbers, underscores, and hyphens"
@@ -205,46 +227,47 @@ final class ProfileEditorViewModelTests: XCTestCase {
 
     func testSaveFailureWithBirthdayInFuture() async {
         // Given
-        spyUseCase.shouldThrowError = .birthdayInFuture
         viewModel.screenName = "john"
         viewModel.birthday = Date().addingTimeInterval(86400) // Tomorrow
 
         // When
         await viewModel.save()
 
-        // Then
+        // Then - validation fails before calling use case
+        XCTAssertFalse(spyUseCase.executeCalled)
         XCTAssertEqual(viewModel.errorMessage, "Birthday cannot be in the future")
         XCTAssertFalse(mockDelegate.didSaveCalled)
     }
 
     func testSaveFailureWithBirthdayTooRecent() async {
         // Given
-        spyUseCase.shouldThrowError = .birthdayTooRecent
         viewModel.screenName = "john"
         viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 10) // 10 years ago
 
         // When
         await viewModel.save()
 
-        // Then
+        // Then - validation fails before calling use case
+        XCTAssertFalse(spyUseCase.executeCalled)
         XCTAssertEqual(viewModel.errorMessage, "You must be at least 13 years old")
         XCTAssertFalse(mockDelegate.didSaveCalled)
     }
 
     func testSaveClearsErrorMessageBeforeRetry() async {
-        // Given - first save fails
-        spyUseCase.shouldThrowError = .screenNameTooShort
+        // Given - first save fails due to validation
         viewModel.screenName = "a"
+        viewModel.birthday = Date().addingTimeInterval(-365 * 24 * 60 * 60 * 20) // 20 years ago
         await viewModel.save()
         XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertFalse(spyUseCase.executeCalled)
 
         // When - retry with valid input
-        spyUseCase.shouldThrowError = nil
         viewModel.screenName = "john"
         await viewModel.save()
 
-        // Then - error message cleared
+        // Then - error message cleared and use case called
         XCTAssertNil(viewModel.errorMessage)
+        XCTAssertTrue(spyUseCase.executeCalled)
         XCTAssertTrue(mockDelegate.didSaveCalled)
     }
 
