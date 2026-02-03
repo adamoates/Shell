@@ -20,6 +20,13 @@ import UIKit
 final class AppDependencyContainer {
     // MARK: - Shared Dependencies
 
+    /// Shared logger (singleton pattern)
+    /// Logger must be shared across the app for consistent subsystem/category organization
+    private lazy var sharedLogger: Logger = OSLogLogger(
+        subsystem: "com.adamcodertrader.Shell",
+        defaultCategory: "general"
+    )
+
     /// Shared session repository (singleton pattern)
     /// Session state must be shared across the app
     private lazy var sharedSessionRepository: SessionRepository = InMemorySessionRepository()
@@ -238,6 +245,12 @@ final class AppDependencyContainer {
     }
 
     // MARK: - Infrastructure Factory
+
+    /// Create a logger
+    /// - Returns: Shared logger instance
+    func makeLogger() -> Logger {
+        sharedLogger
+    }
 
     /// Create a config loader
     /// - Returns: New instance of ConfigLoader
