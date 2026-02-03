@@ -13,11 +13,18 @@ final class AppRouter: Router {
     private let coordinator: AppCoordinator
     private let accessControl: RouteAccessControl
     private let routeResolver: RouteResolver
+    private let logger: Logger
 
-    init(coordinator: AppCoordinator, accessControl: RouteAccessControl, routeResolver: RouteResolver) {
+    init(
+        coordinator: AppCoordinator,
+        accessControl: RouteAccessControl,
+        routeResolver: RouteResolver,
+        logger: Logger
+    ) {
         self.coordinator = coordinator
         self.accessControl = accessControl
         self.routeResolver = routeResolver
+        self.logger = logger
     }
 
     func canNavigate(to route: Route) async -> Bool {
@@ -47,15 +54,15 @@ final class AppRouter: Router {
     }
 
     func navigate(to url: URL) {
-        print("🔗 AppRouter: Resolving URL: \(url)")
+        logger.info("Resolving URL", category: "navigation", context: ["url": url.absoluteString])
 
         // Resolve URL to Route
         guard let route = routeResolver.resolve(url: url) else {
-            print("⚠️ AppRouter: Could not resolve URL to route")
+            logger.warning("Could not resolve URL to route", category: "navigation", context: ["url": url.absoluteString])
             return
         }
 
-        print("✅ AppRouter: Resolved to route: \(route.description)")
+        logger.info("Resolved URL to route", category: "navigation", context: ["route": route.description])
 
         // Navigate to the resolved route
         navigate(to: route)
@@ -65,7 +72,7 @@ final class AppRouter: Router {
 
     @MainActor
     private func routeToCoordinator(_ route: Route) {
-        print("🧭 AppRouter: Routing to \(route.description)")
+        logger.info("Routing to coordinator", category: "navigation", context: ["route": route.description])
 
         switch route {
         case .login, .signup, .forgotPassword:
@@ -78,22 +85,22 @@ final class AppRouter: Router {
 
         case .profile(let userID):
             // Show profile for user
-            print("  → Profile: \(userID)")
+            logger.debug("Routing to profile", category: "navigation", context: ["userID": userID])
             coordinator.showProfile(userID: userID)
 
         case .settings(let section):
             // Future: Settings coordinator
-            print("  → Settings section: \(section?.rawValue ?? "main")")
+            logger.debug("Routing to settings", category: "navigation", context: ["section": section?.rawValue ?? "main"])
             // For now, just route to authenticated
             coordinator.route(to: .authenticated)
 
         case .identitySetup(let step):
             // Show identity setup flow
-            print("  → Identity setup step: \(step?.rawValue ?? "start")")
+            logger.debug("Routing to identity setup", category: "navigation", context: ["step": step?.rawValue ?? "start"])
             coordinator.showIdentitySetup(startStep: step)
 
         case .notFound(let path):
-            print("⚠️ AppRouter: Route not found: \(path)")
+            logger.warning("Route not found", category: "navigation", context: ["path": path])
             // Fall back to appropriate flow based on auth state
             coordinator.route(to: .authenticated)
 
@@ -105,8 +112,11 @@ final class AppRouter: Router {
 
     @MainActor
     private func handleDenial(route: Route, reason: DenialReason) {
-        print("🚫 AppRouter: Access denied for \(route.description)")
-        print("   Reason: \(reason)")
+        logger.warning(
+            "Access denied",
+            category: "navigation",
+            context: ["route": route.description, "reason": "\(reason)"]
+        )
 
         switch reason {
         case .unauthenticated:
@@ -121,13 +131,13 @@ final class AppRouter: Router {
 
         case .insufficientPermissions:
             // Future: Show error message
-            print("   → Insufficient permissions")
+            logger.debug("Insufficient permissions, redirecting", category: "navigation")
             coordinator.route(to: .authenticated)
 
         case .requiresAdditionalInfo:
             // Redirect to identity setup
             // Future: Show identity setup flow
-            print("   → Requires additional info")
+            logger.debug("Requires additional info, redirecting", category: "navigation")
             coordinator.route(to: .authenticated)
         }
     }
