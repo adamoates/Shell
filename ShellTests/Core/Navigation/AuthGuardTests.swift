@@ -16,6 +16,14 @@ final class AuthGuardTests: XCTestCase {
 
     // MARK: - Test Doubles
 
+    private struct NoOpLogger: Logger {
+        func debug(_ message: String, category: String?, context: [String : String]?) {}
+        func info(_ message: String, category: String?, context: [String : String]?) {}
+        func warning(_ message: String, category: String?, context: [String : String]?) {}
+        func error(_ message: String, category: String?, context: [String : String]?) {}
+        func fault(_ message: String, category: String?, context: [String : String]?) {}
+    }
+
     private final class SessionRepositoryFake: SessionRepository {
         var stubbedSession: UserSession?
         var stubbedError: Error?
@@ -43,7 +51,7 @@ final class AuthGuardTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockRepository = SessionRepositoryFake()
-        sut = AuthGuard(sessionRepository: mockRepository)
+        sut = AuthGuard(sessionRepository: mockRepository, logger: NoOpLogger())
     }
 
     override func tearDown() {

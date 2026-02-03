@@ -158,7 +158,8 @@ final class AppDependencyContainer {
         AppRouter(
             coordinator: coordinator,
             accessControl: makeAuthGuard(),
-            routeResolver: makeRouteResolver()
+            routeResolver: makeRouteResolver(),
+            logger: makeLogger()
         )
     }
 
@@ -166,7 +167,8 @@ final class AppDependencyContainer {
     /// - Returns: Configured auth guard
     func makeAuthGuard() -> RouteAccessControl {
         AuthGuard(
-            sessionRepository: makeSessionRepository()
+            sessionRepository: makeSessionRepository(),
+            logger: makeLogger()
         )
     }
 
