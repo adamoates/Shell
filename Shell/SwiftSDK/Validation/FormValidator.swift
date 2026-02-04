@@ -12,7 +12,6 @@ import Foundation
 /// - Form-level validation state
 /// - Orchestration of multiple FieldValidators
 /// - Submit button enable/disable logic
-@MainActor
 final class FormValidator {
     private(set) var isFormValid: Bool = false
     private(set) var hasInteraction: Bool = false
@@ -22,6 +21,12 @@ final class FormValidator {
 
     func register<Value>(_ field: FieldValidator<Value>) {
         fieldValidators.append(field)
+
+        // Set up callback to update form state when field changes
+        field.onChange = { [weak self] in
+            self?.updateFormState()
+        }
+
         updateFormState()
     }
 
@@ -44,7 +49,6 @@ final class FormValidator {
     }
 }
 
-@MainActor
 protocol FieldValidatorProtocol: AnyObject {
     var isValid: Bool { get }
     var isTouched: Bool { get }
