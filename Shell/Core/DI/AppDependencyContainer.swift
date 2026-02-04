@@ -187,10 +187,11 @@ final class AppDependencyContainer {
     /// - Returns: Array of configured deep link handlers
     func makeDeepLinkHandlers(router: Router) -> [DeepLinkHandler] {
         let resolver = makeRouteResolver()
+        let logger = makeLogger()
 
         return [
-            UniversalLinkHandler(routeResolver: resolver, router: router),
-            CustomURLSchemeHandler(routeResolver: resolver, router: router)
+            UniversalLinkHandler(routeResolver: resolver, router: router, logger: logger),
+            CustomURLSchemeHandler(routeResolver: resolver, router: router, logger: logger)
         ]
     }
 
