@@ -32,15 +32,18 @@ final class AuthCoordinator: Coordinator {
     weak var delegate: AuthCoordinatorDelegate?
 
     private let validateCredentials: ValidateCredentialsUseCase
+    private let logger: Logger
 
     // MARK: - Initialization
 
     init(
         navigationController: UINavigationController,
-        validateCredentials: ValidateCredentialsUseCase
+        validateCredentials: ValidateCredentialsUseCase,
+        logger: Logger
     ) {
         self.navigationController = navigationController
         self.validateCredentials = validateCredentials
+        self.logger = logger
     }
 
     // MARK: - Coordinator
@@ -70,7 +73,7 @@ final class AuthCoordinator: Coordinator {
 
 extension AuthCoordinator: LoginViewControllerDelegate {
     func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String) {
-        print("✅ AuthCoordinator: Login completed for user: \(username)")
+        logger.info("Login completed", category: "coordinator", context: ["username": username])
         delegate?.authCoordinatorDidCompleteLogin(self, username: username)
     }
 }

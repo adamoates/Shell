@@ -15,6 +15,16 @@ final class PostLoginRedirectTests: XCTestCase {
     private var navigationController: UINavigationController!
     private var dependencyContainer: AppDependencyContainer!
 
+    // MARK: - Test Doubles
+
+    private struct NoOpLogger: Logger {
+        func debug(_ message: String, category: String?, context: [String : String]?) {}
+        func info(_ message: String, category: String?, context: [String : String]?) {}
+        func warning(_ message: String, category: String?, context: [String : String]?) {}
+        func error(_ message: String, category: String?, context: [String : String]?) {}
+        func fault(_ message: String, category: String?, context: [String : String]?) {}
+    }
+
     override func setUp() {
         super.setUp()
         window = UIWindow()
@@ -23,7 +33,8 @@ final class PostLoginRedirectTests: XCTestCase {
         sut = AppCoordinator(
             window: window,
             navigationController: navigationController,
-            dependencyContainer: dependencyContainer
+            dependencyContainer: dependencyContainer,
+            logger: NoOpLogger()
         )
     }
 
