@@ -41,7 +41,8 @@ final class AppDependencyContainer {
             return RemoteUserProfileRepository(
                 httpClient: httpClient,
                 baseURL: APIConfig.current.baseURL,
-                authToken: APIConfig.current.authToken
+                authToken: APIConfig.current.authToken,
+                logger: makeLogger()
             )
         } else {
             // Use in-memory repository for offline development
