@@ -15,6 +15,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var appRouter: Router?
     private var deepLinkHandlers: [DeepLinkHandler] = []
     private let dependencyContainer = AppDependencyContainer()
+    private lazy var logger: Logger = dependencyContainer.makeLogger()
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
@@ -65,7 +66,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Handle Universal Links from initial launch (if any)
         if let userActivity = connectionOptions.userActivities.first(where: { $0.activityType == NSUserActivityTypeBrowsingWeb }) {
-            _ = AppDelegate.handleUniversalLink(userActivity)
+            _ = AppDelegate.handleUniversalLink(userActivity, logger: logger)
         }
     }
 
@@ -77,23 +78,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         // Handle Universal Links when app is running or in background
-        print("🔗 SceneDelegate: Received Universal Link activity")
-        _ = AppDelegate.handleUniversalLink(userActivity)
+        logger.info("Received Universal Link activity", category: "lifecycle")
+        _ = AppDelegate.handleUniversalLink(userActivity, logger: logger)
     }
 
     // MARK: - Deep Link Handling
 
     private func handleDeepLink(_ url: URL) {
-        print("🔗 SceneDelegate: Handling deep link: \(url)")
+        logger.info("Handling deep link", category: "lifecycle", context: ["url": url.absoluteString])
 
         for handler in deepLinkHandlers {
             if handler.handle(url: url) {
-                print("✅ SceneDelegate: Deep link handled by \(type(of: handler))")
+                logger.info("Deep link handled", category: "lifecycle", context: ["handler": String(describing: type(of: handler))])
                 return
             }
         }
 
-        print("⚠️ SceneDelegate: No handler could process URL: \(url)")
+        logger.warning("No handler could process URL", category: "lifecycle", context: ["url": url.absoluteString])
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
