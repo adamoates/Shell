@@ -10,6 +10,14 @@ import XCTest
 
 // MARK: - Test Doubles
 
+private struct NoOpLogger: Logger {
+    func debug(_ message: String, category: String?, context: [String : String]?) {}
+    func info(_ message: String, category: String?, context: [String : String]?) {}
+    func warning(_ message: String, category: String?, context: [String : String]?) {}
+    func error(_ message: String, category: String?, context: [String : String]?) {}
+    func fault(_ message: String, category: String?, context: [String : String]?) {}
+}
+
 private final class RouterSpy: Router {
     private(set) var navigatedRoutes: [Route] = []
     private(set) var canNavigateChecks: [Route] = []
@@ -41,8 +49,8 @@ final class DeepLinkHandlerTests: XCTestCase {
         super.setUp()
         resolver = DefaultRouteResolver()
         router = RouterSpy()
-        universalHandler = UniversalLinkHandler(routeResolver: resolver, router: router)
-        customHandler = CustomURLSchemeHandler(routeResolver: resolver, router: router)
+        universalHandler = UniversalLinkHandler(routeResolver: resolver, router: router, logger: NoOpLogger())
+        customHandler = CustomURLSchemeHandler(routeResolver: resolver, router: router, logger: NoOpLogger())
     }
 
     override func tearDown() {

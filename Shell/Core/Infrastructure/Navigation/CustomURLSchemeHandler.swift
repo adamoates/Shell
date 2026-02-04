@@ -12,10 +12,12 @@ import Foundation
 final class CustomURLSchemeHandler: DeepLinkHandler {
     private let routeResolver: RouteResolver
     private let router: Router
+    private let logger: Logger
 
-    init(routeResolver: RouteResolver, router: Router) {
+    init(routeResolver: RouteResolver, router: Router, logger: Logger) {
         self.routeResolver = routeResolver
         self.router = router
+        self.logger = logger
     }
 
     func canHandle(url: URL) -> Bool {
@@ -27,11 +29,11 @@ final class CustomURLSchemeHandler: DeepLinkHandler {
         guard canHandle(url: url) else { return false }
 
         guard let route = routeResolver.resolve(url: url) else {
-            print("⚠️ CustomURLSchemeHandler: Could not resolve URL to route: \(url)")
+            logger.warning("Could not resolve custom URL to route", category: "deeplink", context: ["url": url.absoluteString])
             return false
         }
 
-        print("🔗 CustomURLSchemeHandler: Navigating to \(route.description)")
+        logger.info("Navigating to route from custom URL", category: "deeplink", context: ["route": route.description, "url": url.absoluteString])
         router.navigate(to: route)
         return true
     }
