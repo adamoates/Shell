@@ -15,13 +15,24 @@ final class RemoteUserProfileRepositoryTests: XCTestCase {
     private var mockHTTPClient: MockHTTPClient!
     private let baseURL = URL(string: "https://api.shell.app/v1")!
 
+    // MARK: - Test Doubles
+
+    private struct NoOpLogger: Logger {
+        func debug(_ message: String, category: String?, context: [String : String]?) {}
+        func info(_ message: String, category: String?, context: [String : String]?) {}
+        func warning(_ message: String, category: String?, context: [String : String]?) {}
+        func error(_ message: String, category: String?, context: [String : String]?) {}
+        func fault(_ message: String, category: String?, context: [String : String]?) {}
+    }
+
     override func setUp() {
         super.setUp()
         mockHTTPClient = MockHTTPClient()
         sut = RemoteUserProfileRepository(
             httpClient: mockHTTPClient,
             baseURL: baseURL,
-            authToken: "test-token"
+            authToken: "test-token",
+            logger: NoOpLogger()
         )
     }
 

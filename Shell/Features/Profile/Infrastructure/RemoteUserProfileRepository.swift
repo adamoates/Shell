@@ -13,15 +13,18 @@ final class RemoteUserProfileRepository: UserProfileRepository {
     private let httpClient: HTTPClient
     private let baseURL: URL
     private let authToken: String?
+    private let logger: Logger
 
     init(
         httpClient: HTTPClient,
         baseURL: URL,
-        authToken: String? = nil
+        authToken: String? = nil,
+        logger: Logger
     ) {
         self.httpClient = httpClient
         self.baseURL = baseURL
         self.authToken = authToken
+        self.logger = logger
     }
 
     // MARK: - UserProfileRepository
@@ -29,7 +32,7 @@ final class RemoteUserProfileRepository: UserProfileRepository {
     func fetchProfile(userID: String) async -> UserProfile? {
         // Build URL: GET /users/{userID}/profile
         guard let url = URL(string: "/users/\(userID)/profile", relativeTo: baseURL) else {
-            print("⚠️ RemoteUserProfileRepository: Invalid URL for user \(userID)")
+            logger.error("Invalid URL for fetch profile", category: "repository", context: ["userID": userID])
             return nil
         }
 
@@ -58,11 +61,11 @@ final class RemoteUserProfileRepository: UserProfileRepository {
 
         } catch HTTPClientError.httpError(statusCode: 404, _) {
             // Profile not found - this is expected for new users
-            print("ℹ️ RemoteUserProfileRepository: Profile not found for user \(userID)")
+            logger.info("Profile not found", category: "repository", context: ["userID": userID])
             return nil
 
         } catch {
-            print("⚠️ RemoteUserProfileRepository: Failed to fetch profile: \(error)")
+            logger.warning("Failed to fetch profile", category: "repository", context: ["userID": userID, "error": "\(error)"])
             return nil
         }
     }
@@ -70,7 +73,7 @@ final class RemoteUserProfileRepository: UserProfileRepository {
     func saveProfile(_ profile: UserProfile) async {
         // Build URL: PUT /users/{userID}/profile
         guard let url = URL(string: "/users/\(profile.userID)/profile", relativeTo: baseURL) else {
-            print("⚠️ RemoteUserProfileRepository: Invalid URL for user \(profile.userID)")
+            logger.error("Invalid URL for save profile", category: "repository", context: ["userID": profile.userID])
             return
         }
 
@@ -78,7 +81,7 @@ final class RemoteUserProfileRepository: UserProfileRepository {
         let requestBody = ProfileAPI.toRequest(profile: profile)
 
         guard let bodyData = try? JSONEncoder().encode(requestBody) else {
-            print("⚠️ RemoteUserProfileRepository: Failed to encode request body")
+            logger.error("Failed to encode profile request body", category: "repository", context: ["userID": profile.userID])
             return
         }
 
@@ -98,17 +101,17 @@ final class RemoteUserProfileRepository: UserProfileRepository {
         do {
             // Perform HTTP request
             _ = try await httpClient.perform(request)
-            print("✅ RemoteUserProfileRepository: Profile saved for user \(profile.userID)")
+            logger.info("Profile saved", category: "repository", context: ["userID": profile.userID])
 
         } catch {
-            print("⚠️ RemoteUserProfileRepository: Failed to save profile: \(error)")
+            logger.warning("Failed to save profile", category: "repository", context: ["userID": profile.userID, "error": "\(error)"])
         }
     }
 
     func deleteProfile(userID: String) async {
         // Build URL: DELETE /users/{userID}/profile
         guard let url = URL(string: "/users/\(userID)/profile", relativeTo: baseURL) else {
-            print("⚠️ RemoteUserProfileRepository: Invalid URL for user \(userID)")
+            logger.error("Invalid URL for delete profile", category: "repository", context: ["userID": userID])
             return
         }
 
@@ -127,17 +130,17 @@ final class RemoteUserProfileRepository: UserProfileRepository {
         do {
             // Perform HTTP request
             _ = try await httpClient.perform(request)
-            print("✅ RemoteUserProfileRepository: Profile deleted for user \(userID)")
+            logger.info("Profile deleted", category: "repository", context: ["userID": userID])
 
         } catch {
-            print("⚠️ RemoteUserProfileRepository: Failed to delete profile: \(error)")
+            logger.warning("Failed to delete profile", category: "repository", context: ["userID": userID, "error": "\(error)"])
         }
     }
 
     func hasCompletedIdentitySetup(userID: String) async -> Bool {
         // Build URL: GET /users/{userID}/identity-status
         guard let url = URL(string: "/users/\(userID)/identity-status", relativeTo: baseURL) else {
-            print("⚠️ RemoteUserProfileRepository: Invalid URL for user \(userID)")
+            logger.error("Invalid URL for identity status", category: "repository", context: ["userID": userID])
             return false
         }
 
@@ -164,7 +167,7 @@ final class RemoteUserProfileRepository: UserProfileRepository {
             return statusResponse.hasCompletedIdentitySetup
 
         } catch {
-            print("⚠️ RemoteUserProfileRepository: Failed to fetch identity status: \(error)")
+            logger.warning("Failed to fetch identity status", category: "repository", context: ["userID": userID, "error": "\(error)"])
             return false
         }
     }
