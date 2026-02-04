@@ -89,7 +89,8 @@ final class AppDependencyContainer {
         return AppCoordinator(
             window: window,
             navigationController: navigationController,
-            dependencyContainer: self
+            dependencyContainer: self,
+            logger: makeLogger()
         )
     }
 
@@ -99,7 +100,8 @@ final class AppDependencyContainer {
     func makeAuthCoordinator(navigationController: UINavigationController) -> AuthCoordinator {
         AuthCoordinator(
             navigationController: navigationController,
-            validateCredentials: makeValidateCredentialsUseCase()
+            validateCredentials: makeValidateCredentialsUseCase(),
+            logger: makeLogger()
         )
     }
 
@@ -112,7 +114,8 @@ final class AppDependencyContainer {
             fetchItems: makeFetchItemsUseCase(),
             createItem: makeCreateItemUseCase(),
             updateItem: makeUpdateItemUseCase(),
-            deleteItem: makeDeleteItemUseCase()
+            deleteItem: makeDeleteItemUseCase(),
+            logger: makeLogger()
         )
     }
 

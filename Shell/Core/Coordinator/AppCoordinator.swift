@@ -23,6 +23,7 @@ final class AppCoordinator: Coordinator {
 
     private let window: UIWindow
     private let dependencyContainer: AppDependencyContainer
+    private let logger: Logger
 
     /// Route to restore after successful authentication
     private var pendingRoute: Route?
@@ -32,11 +33,13 @@ final class AppCoordinator: Coordinator {
     init(
         window: UIWindow,
         navigationController: UINavigationController,
-        dependencyContainer: AppDependencyContainer
+        dependencyContainer: AppDependencyContainer,
+        logger: Logger
     ) {
         self.window = window
         self.navigationController = navigationController
         self.dependencyContainer = dependencyContainer
+        self.logger = logger
 
         // Observe Universal Link notifications
         setupUniversalLinkObserver()
@@ -58,7 +61,7 @@ final class AppCoordinator: Coordinator {
     /// Save a route to restore after authentication
     /// - Parameter route: The route that was denied due to lack of authentication
     func saveIntendedRoute(_ route: Route) {
-        print("💾 AppCoordinator: Saving intended route: \(route.description)")
+        logger.debug("Saving intended route", category: "coordinator", context: ["route": route.description])
         pendingRoute = route
     }
 
@@ -69,7 +72,7 @@ final class AppCoordinator: Coordinator {
             return nil
         }
 
-        print("📍 AppCoordinator: Restoring pending route: \(route.description)")
+        logger.debug("Restoring pending route", category: "coordinator", context: ["route": route.description])
         pendingRoute = nil
         return route
     }
@@ -77,7 +80,7 @@ final class AppCoordinator: Coordinator {
     /// Clear the pending route without restoring it
     func clearPendingRoute() {
         if pendingRoute != nil {
-            print("🗑️  AppCoordinator: Clearing pending route")
+            logger.debug("Clearing pending route", category: "coordinator")
             pendingRoute = nil
         }
     }
@@ -131,11 +134,11 @@ final class AppCoordinator: Coordinator {
     /// - Parameter notification: Notification containing the URL in userInfo
     @objc private func handleUniversalLinkNotification(_ notification: Notification) {
         guard let url = notification.userInfo?["url"] as? URL else {
-            print("⚠️ AppCoordinator: No URL in Universal Link notification")
+            logger.warning("No URL in Universal Link notification", category: "coordinator")
             return
         }
 
-        print("🔗 AppCoordinator: Processing Universal Link: \(url)")
+        logger.info("Processing Universal Link", category: "coordinator", context: ["url": url.absoluteString])
 
         // Create router to handle the URL
         let router = dependencyContainer.makeAppRouter(coordinator: self)
@@ -276,11 +279,11 @@ private extension AppCoordinator {
 
 extension AppCoordinator: AuthCoordinatorDelegate {
     func authCoordinatorDidCompleteLogin(_ coordinator: AuthCoordinator, username: String) {
-        print("✅ AppCoordinator: Login completed for user: \(username)")
+        logger.info("Login completed", category: "coordinator", context: ["username": username])
 
         // Check for pending route to restore
         if let pendingRoute = restorePendingRoute() {
-            print("📍 AppCoordinator: Navigating to restored route: \(pendingRoute.description)")
+            logger.info("Navigating to restored route", category: "coordinator", context: ["route": pendingRoute.description])
             // Create router to navigate to the pending route
             let router = dependencyContainer.makeAppRouter(coordinator: self)
             router.navigate(to: pendingRoute)
@@ -295,7 +298,7 @@ extension AppCoordinator: AuthCoordinatorDelegate {
 
 extension AppCoordinator: ItemsCoordinatorDelegate {
     func itemsCoordinatorDidRequestLogout(_ coordinator: ItemsCoordinator) {
-        print("✅ AppCoordinator: Logout requested")
+        logger.info("Logout requested", category: "coordinator")
         // Clear any pending route on logout
         clearPendingRoute()
         // Route to unauthenticated state
@@ -303,13 +306,13 @@ extension AppCoordinator: ItemsCoordinatorDelegate {
     }
 
     func itemsCoordinatorDidRequestIdentitySetup(_ coordinator: ItemsCoordinator) {
-        print("✅ AppCoordinator: Identity setup requested")
+        logger.info("Identity setup requested", category: "coordinator")
         // Navigate to identity setup flow
         showIdentitySetup()
     }
 
     func itemsCoordinatorDidRequestProfile(_ coordinator: ItemsCoordinator) {
-        print("✅ AppCoordinator: Profile view requested")
+        logger.info("Profile view requested", category: "coordinator")
         // TODO: Get actual userID from session
         // For now, use a test userID
         showProfile(userID: "current_user")
@@ -320,11 +323,11 @@ extension AppCoordinator: ItemsCoordinatorDelegate {
 
 extension AppCoordinator: IdentitySetupCoordinatorDelegate {
     func identitySetupCoordinatorDidComplete(_ coordinator: IdentitySetupCoordinator, profile: UserProfile) {
-        print("✅ AppCoordinator: Identity setup completed for user: \(profile.userID)")
+        logger.info("Identity setup completed", category: "coordinator", context: ["userID": profile.userID])
 
         // Check for pending route to restore
         if let pendingRoute = restorePendingRoute() {
-            print("📍 AppCoordinator: Navigating to restored route: \(pendingRoute.description)")
+            logger.info("Navigating to restored route", category: "coordinator", context: ["route": pendingRoute.description])
             // Create router to navigate to the pending route
             let router = dependencyContainer.makeAppRouter(coordinator: self)
             router.navigate(to: pendingRoute)
@@ -335,7 +338,7 @@ extension AppCoordinator: IdentitySetupCoordinatorDelegate {
     }
 
     func identitySetupCoordinatorDidCancel(_ coordinator: IdentitySetupCoordinator) {
-        print("⚠️ AppCoordinator: Identity setup cancelled")
+        logger.warning("Identity setup cancelled", category: "coordinator")
         // User cancelled identity setup, return to login
         clearPendingRoute()
         route(to: .unauthenticated)

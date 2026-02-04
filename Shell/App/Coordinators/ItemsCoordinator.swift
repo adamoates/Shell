@@ -42,6 +42,7 @@ final class ItemsCoordinator: Coordinator {
     private let createItem: CreateItemUseCase
     private let updateItem: UpdateItemUseCase
     private let deleteItem: DeleteItemUseCase
+    private let logger: Logger
 
     // MARK: - Initialization
 
@@ -50,13 +51,15 @@ final class ItemsCoordinator: Coordinator {
         fetchItems: FetchItemsUseCase,
         createItem: CreateItemUseCase,
         updateItem: UpdateItemUseCase,
-        deleteItem: DeleteItemUseCase
+        deleteItem: DeleteItemUseCase,
+        logger: Logger
     ) {
         self.navigationController = navigationController
         self.fetchItems = fetchItems
         self.createItem = createItem
         self.updateItem = updateItem
         self.deleteItem = deleteItem
+        self.logger = logger
     }
 
     // MARK: - Coordinator
@@ -120,32 +123,32 @@ final class ItemsCoordinator: Coordinator {
 
 extension ItemsCoordinator: ListViewControllerDelegate {
     func listViewControllerDidRequestLogout(_ controller: ListViewController) {
-        print("✅ ItemsCoordinator: Logout requested")
+        logger.info("Logout requested", category: "coordinator")
         delegate?.itemsCoordinatorDidRequestLogout(self)
     }
 
     func listViewController(_ controller: ListViewController, didSelectItem item: Item) {
-        print("✅ ItemsCoordinator: Item selected - \(item.name)")
+        logger.info("Item selected", category: "coordinator", context: ["itemName": item.name])
         showDetail(for: item)
     }
 
     func listViewControllerDidRequestIdentitySetup(_ controller: ListViewController) {
-        print("✅ ItemsCoordinator: Identity setup requested")
+        logger.info("Identity setup requested", category: "coordinator")
         delegate?.itemsCoordinatorDidRequestIdentitySetup(self)
     }
 
     func listViewControllerDidRequestProfile(_ controller: ListViewController) {
-        print("✅ ItemsCoordinator: Profile view requested")
+        logger.info("Profile view requested", category: "coordinator")
         delegate?.itemsCoordinatorDidRequestProfile(self)
     }
 
     func listViewControllerDidRequestCreateItem(_ controller: ListViewController) {
-        print("✅ ItemsCoordinator: Create item requested")
+        logger.info("Create item requested", category: "coordinator")
         showCreateItem()
     }
 
     func listViewController(_ controller: ListViewController, didRequestEditItem item: Item) {
-        print("✅ ItemsCoordinator: Edit item requested - \(item.name)")
+        logger.info("Edit item requested", category: "coordinator", context: ["itemName": item.name])
         showEditItem(item)
     }
 }
