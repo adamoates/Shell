@@ -8,9 +8,9 @@
 import XCTest
 @testable import Shell
 
+@MainActor
 final class FormValidatorTests: XCTestCase {
 
-    @MainActor
     func testFormValidWhenAllFieldsValid() {
         let formValidator = FormValidator()
 
@@ -29,7 +29,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.isFormValid)
     }
 
-    @MainActor
     func testFormInvalidWhenAnyFieldInvalid() {
         let formValidator = FormValidator()
 
@@ -48,7 +47,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertFalse(formValidator.isFormValid)
     }
 
-    @MainActor
     func testValidateAllValidatesAllFields() {
         let formValidator = FormValidator()
 
@@ -73,7 +71,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertFalse(field2.isValid)
     }
 
-    @MainActor
     func testTouchAllTouchesAllFields() {
         let formValidator = FormValidator()
 
@@ -95,7 +92,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(field2.isTouched)
     }
 
-    @MainActor
     func testHasInteractionWhenAnyFieldTouched() {
         let formValidator = FormValidator()
 
@@ -118,7 +114,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.hasInteraction)
     }
 
-    @MainActor
     func testIsDirtyWhenAnyFieldDirty() {
         let formValidator = FormValidator()
 
@@ -141,7 +136,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.isDirty)
     }
 
-    @MainActor
     func testFormValidityUpdatesWhenFieldValueChanges() {
         let formValidator = FormValidator()
 
@@ -165,7 +159,6 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.isFormValid)
     }
 
-    @MainActor
     func testValidateAllReturnsTrueWhenAllFieldsValid() {
         let formValidator = FormValidator()
 

@@ -12,8 +12,9 @@ import Foundation
 /// - Real-time validation feedback
 /// - Form state tracking (touched, dirty, valid)
 /// - Error message display
+@MainActor
 final class FieldValidator<Value: Equatable> {
-    // MARK: - State
+    // MARK: - Published State
 
     var value: Value {
         didSet {
@@ -22,7 +23,6 @@ final class FieldValidator<Value: Equatable> {
                 if validateOnChange {
                     validate()
                 }
-                onChange?()
             }
         }
     }
@@ -38,10 +38,6 @@ final class FieldValidator<Value: Equatable> {
     private let validateOnChange: Bool
     private let errorMapper: ((AnyValidationError) -> String)?
 
-    // MARK: - Callback
-
-    var onChange: (() -> Void)?
-
     // MARK: - Initialization
 
     init<V: Validator>(
@@ -50,35 +46,10 @@ final class FieldValidator<Value: Equatable> {
         validateOnChange: Bool = true,
         errorMapper: ((AnyValidationError) -> String)? = nil
     ) where V.Value == Value {
-        let anyValidator = validator.eraseToAnyValidator()
-        self.validator = anyValidator
+        self.value = initialValue
+        self.validator = validator.eraseToAnyValidator()
         self.validateOnChange = validateOnChange
         self.errorMapper = errorMapper
-        self.value = initialValue
-        self.errorMessage = nil
-        self.isTouched = false
-        self.isDirty = false
-
-        // Validate initially if validateOnChange is true AND value is non-empty string
-        // (This handles the pattern where empty strings are treated as "not yet filled in")
-        if validateOnChange, let stringValue = initialValue as? String, !stringValue.isEmpty {
-            let result = anyValidator.validate(initialValue)
-            switch result {
-            case .success:
-                self.isValid = true
-            case .failure(let error):
-                let message: String
-                if let mapper = errorMapper {
-                    message = mapper(error)
-                } else {
-                    message = error.localizedDescription
-                }
-                self.errorMessage = message
-                self.isValid = false
-            }
-        } else {
-            self.isValid = true
-        }
     }
 
     // MARK: - Actions
@@ -88,7 +59,6 @@ final class FieldValidator<Value: Equatable> {
         if !validateOnChange {
             validate()
         }
-        onChange?()
     }
 
     @discardableResult
@@ -99,7 +69,6 @@ final class FieldValidator<Value: Equatable> {
         case .success:
             errorMessage = nil
             isValid = true
-            onChange?()
             return true
         case .failure(let error):
             if let mapper = errorMapper {
@@ -108,7 +77,6 @@ final class FieldValidator<Value: Equatable> {
                 errorMessage = error.localizedDescription
             }
             isValid = false
-            onChange?()
             return false
         }
     }
@@ -119,7 +87,6 @@ final class FieldValidator<Value: Equatable> {
         isTouched = false
         isDirty = false
         isValid = true
-        onChange?()
     }
 
     var validatedValue: Value? {

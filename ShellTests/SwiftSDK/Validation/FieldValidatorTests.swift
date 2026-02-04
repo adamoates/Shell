@@ -8,9 +8,9 @@
 import XCTest
 @testable import Shell
 
+@MainActor
 final class FieldValidatorTests: XCTestCase {
 
-    @MainActor
     func testInitialState() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "", validator: validator)
@@ -22,7 +22,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertTrue(field.isValid)
     }
 
-    @MainActor
     func testValueChangeMarksFieldDirty() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "", validator: validator)
@@ -32,7 +31,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertTrue(field.isDirty)
     }
 
-    @MainActor
     func testTouchMarksFieldTouched() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "", validator: validator)
@@ -42,7 +40,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertTrue(field.isTouched)
     }
 
-    @MainActor
     func testValidateOnChangeValidatesAutomatically() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(
@@ -57,7 +54,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertNotNil(field.errorMessage)
     }
 
-    @MainActor
     func testValidateOnChangeFalseRequiresManualValidation() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(
@@ -80,7 +76,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertNotNil(field.errorMessage)
     }
 
-    @MainActor
     func testErrorMapperCustomizesErrorMessages() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(
@@ -96,7 +91,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertEqual(field.errorMessage, "Custom error message")
     }
 
-    @MainActor
     func testResetClearsAllState() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "", validator: validator)
@@ -113,7 +107,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertTrue(field.isValid)
     }
 
-    @MainActor
     func testValidatedValueReturnsNilWhenInvalid() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "h", validator: validator)
@@ -121,7 +114,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertNil(field.validatedValue)
     }
 
-    @MainActor
     func testValidatedValueReturnsValueWhenValid() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "hello", validator: validator)
@@ -129,7 +121,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertEqual(field.validatedValue, "hello")
     }
 
-    @MainActor
     func testComposedValidatorInField() {
         let lengthValidator = StringLengthValidator(minimum: 3, maximum: 10)
         let characterValidator = CharacterSetValidator(allowedCharacters: .alphanumerics)
@@ -147,7 +138,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertTrue(field.isValid)
     }
 
-    @MainActor
     func testValidFieldClearsErrorMessage() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(initialValue: "h", validator: validator)
@@ -164,7 +154,6 @@ final class FieldValidatorTests: XCTestCase {
         XCTAssertNil(field.errorMessage)
     }
 
-    @MainActor
     func testTouchWithValidateOnChangeFalseTriggersValidation() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(
