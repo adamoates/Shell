@@ -81,17 +81,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     /// Shared handler for Universal Links
     /// Called from SceneDelegate when a Universal Link is received
-    /// - Parameter userActivity: The NSUserActivity from the Universal Link
+    /// - Parameters:
+    ///   - userActivity: The NSUserActivity from the Universal Link
+    ///   - logger: Logger for structured logging
     /// - Returns: true if the link was handled, false otherwise
-    static func handleUniversalLink(_ userActivity: NSUserActivity) -> Bool {
+    static func handleUniversalLink(_ userActivity: NSUserActivity, logger: Logger) -> Bool {
         // Verify this is a web browsing activity with a URL
         guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
               let url = userActivity.webpageURL else {
-            print("⚠️ AppDelegate: Invalid Universal Link activity")
+            logger.warning("Invalid Universal Link activity", category: "lifecycle")
             return false
         }
 
-        print("🔗 AppDelegate: Handling Universal Link: \(url)")
+        logger.info("Handling Universal Link", category: "lifecycle", context: ["url": url.absoluteString])
 
         // Post notification with URL for AppCoordinator to handle
         NotificationCenter.default.post(
