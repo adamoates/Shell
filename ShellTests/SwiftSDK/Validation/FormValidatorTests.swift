@@ -8,10 +8,10 @@
 import XCTest
 @testable import Shell
 
-@MainActor
 final class FormValidatorTests: XCTestCase {
 
-    func testFormValidWhenAllFieldsValid() {
+    @MainActor
+    func testFormValidWhenAllFieldsValid() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -29,7 +29,8 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.isFormValid)
     }
 
-    func testFormInvalidWhenAnyFieldInvalid() {
+    @MainActor
+    func testFormInvalidWhenAnyFieldInvalid() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -47,7 +48,8 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertFalse(formValidator.isFormValid)
     }
 
-    func testValidateAllValidatesAllFields() {
+    @MainActor
+    func testValidateAllValidatesAllFields() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -67,11 +69,13 @@ final class FormValidatorTests: XCTestCase {
         let result = formValidator.validateAll()
 
         XCTAssertFalse(result)
+        XCTAssertFalse(formValidator.isFormValid)
         XCTAssertFalse(field1.isValid)
         XCTAssertFalse(field2.isValid)
     }
 
-    func testTouchAllTouchesAllFields() {
+    @MainActor
+    func testValidateAllReturnsTrueWhenAllFieldsValid() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -86,13 +90,14 @@ final class FormValidatorTests: XCTestCase {
         formValidator.register(field1)
         formValidator.register(field2)
 
-        formValidator.touchAll()
+        let result = formValidator.validateAll()
 
-        XCTAssertTrue(field1.isTouched)
-        XCTAssertTrue(field2.isTouched)
+        XCTAssertTrue(result)
+        XCTAssertTrue(formValidator.isFormValid)
     }
 
-    func testHasInteractionWhenAnyFieldTouched() {
+    @MainActor
+    func testHasInteractionWhenAnyFieldTouched() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -114,7 +119,8 @@ final class FormValidatorTests: XCTestCase {
         XCTAssertTrue(formValidator.hasInteraction)
     }
 
-    func testIsDirtyWhenAnyFieldDirty() {
+    @MainActor
+    func testIsDirtyWhenAnyFieldDirty() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -131,35 +137,13 @@ final class FormValidatorTests: XCTestCase {
 
         XCTAssertFalse(formValidator.isDirty)
 
-        field1.value = "modified"
+        field1.value = "hi"
 
         XCTAssertTrue(formValidator.isDirty)
     }
 
-    func testFormValidityUpdatesWhenFieldValueChanges() {
-        let formValidator = FormValidator()
-
-        let field1 = FieldValidator(
-            initialValue: "hello",
-            validator: StringLengthValidator(minimum: 2, maximum: 10)
-        )
-
-        formValidator.register(field1)
-
-        XCTAssertTrue(formValidator.isFormValid)
-
-        // Make field invalid
-        field1.value = "x"
-
-        XCTAssertFalse(formValidator.isFormValid)
-
-        // Make field valid again
-        field1.value = "hello"
-
-        XCTAssertTrue(formValidator.isFormValid)
-    }
-
-    func testValidateAllReturnsTrueWhenAllFieldsValid() {
+    @MainActor
+    func testTouchAllTouchesAllFields() async throws {
         let formValidator = FormValidator()
 
         let field1 = FieldValidator(
@@ -174,8 +158,42 @@ final class FormValidatorTests: XCTestCase {
         formValidator.register(field1)
         formValidator.register(field2)
 
-        let result = formValidator.validateAll()
+        XCTAssertFalse(field1.isTouched)
+        XCTAssertFalse(field2.isTouched)
 
-        XCTAssertTrue(result)
+        formValidator.touchAll()
+
+        XCTAssertTrue(field1.isTouched)
+        XCTAssertTrue(field2.isTouched)
+        XCTAssertTrue(formValidator.hasInteraction)
+    }
+
+    @MainActor
+    func testFormValidityUpdatesWhenFieldValueChanges() async throws {
+        let formValidator = FormValidator()
+
+        let field1 = FieldValidator(
+            initialValue: "hello",
+            validator: StringLengthValidator(minimum: 2, maximum: 10)
+        )
+        let field2 = FieldValidator(
+            initialValue: "world",
+            validator: StringLengthValidator(minimum: 2, maximum: 10)
+        )
+
+        formValidator.register(field1)
+        formValidator.register(field2)
+
+        XCTAssertTrue(formValidator.isFormValid)
+
+        // Change field1 to invalid value
+        field1.value = "x" // Too short
+
+        XCTAssertFalse(formValidator.isFormValid)
+
+        // Change field1 back to valid value
+        field1.value = "hello"
+
+        XCTAssertTrue(formValidator.isFormValid)
     }
 }

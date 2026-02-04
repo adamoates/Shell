@@ -24,7 +24,18 @@
       "Bash(xargs kill:*)",
       "Bash(ls:*)",
       "Bash(plutil:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(for branch in epic-2-items-crud epic/03-api-integration-items epic/03-items-schema-migration)",
+      "Bash(do echo \"Branch: $branch\")",
+      "Bash(for branch in test/01-storyboard-ui test/02-swift-language test/03-architecture-foundation test/04-navigation test/05-swiftui-foundations)",
+      "Bash(git log:*)",
+      "Bash(swift test:*)",
+      "Bash(swift:*)",
+      "Bash(git stash:*)",
+      "Bash(wc:*)"
     ]
   }
 }
