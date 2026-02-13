@@ -34,9 +34,15 @@ final class AppDependencyContainer {
 
     /// Shared user profile repository (singleton pattern)
     /// Profile data must be shared across the app
-    /// Uses feature flag to switch between in-memory and remote implementation
+    /// Uses feature flag to switch between in-memory, remote, and Core Data implementations
     private lazy var sharedUserProfileRepository: UserProfileRepository = {
-        if RepositoryConfig.useRemoteRepository {
+        if RepositoryConfig.useCoreDataUserProfileRepository {
+            // Use Core Data repository for local persistence
+            return CoreDataUserProfileRepository(
+                stack: makeCoreDataStack(),
+                logger: makeLogger()
+            )
+        } else if RepositoryConfig.useRemoteRepository {
             // Use remote repository with HTTP client
             let httpClient = URLSessionHTTPClient()
             return RemoteUserProfileRepository(
@@ -53,9 +59,12 @@ final class AppDependencyContainer {
 
     /// Shared items repository (singleton pattern)
     /// Items data must be shared across the app
-    /// Uses feature flag to switch between in-memory and HTTP implementation
+    /// Uses feature flag to switch between in-memory, HTTP, and Core Data implementations
     private lazy var sharedItemsRepository: ItemsRepository = {
-        if RepositoryConfig.useHTTPItemsRepository {
+        if RepositoryConfig.useCoreDataItemsRepository {
+            // Use Core Data repository for local persistence
+            return CoreDataItemsRepository(stack: makeCoreDataStack())
+        } else if RepositoryConfig.useHTTPItemsRepository {
             // Use HTTP repository with backend API
             let httpClient = URLSessionItemsHTTPClient(
                 session: .shared,
@@ -71,6 +80,40 @@ final class AppDependencyContainer {
     /// Shared network monitor (singleton pattern)
     /// Network connectivity state must be shared across the app
     private lazy var sharedNetworkMonitor: NetworkMonitor = NetworkMonitor()
+
+    /// Shared Core Data stack (singleton pattern)
+    /// Core Data stack must be shared across the app for consistent persistence
+    private lazy var sharedCoreDataStack: CoreDataStack = {
+        // Create Core Data stack asynchronously with synchronous bridge
+        // This blocks during initialization, which is acceptable for DI container setup
+        var stack: CoreDataStack!
+        let semaphore = DispatchSemaphore(value: 0)
+
+        Task {
+            do {
+                stack = try await CoreDataStack(
+                    modelName: "Shell",
+                    inMemory: false,
+                    logger: makeLogger()
+                )
+            } catch {
+                // Fallback to in-memory stack if persistent store fails
+                let logger = makeLogger()
+                Task { @MainActor in
+                    logger.error("Failed to load Core Data persistent store, using in-memory fallback: \(error.localizedDescription)")
+                }
+                stack = try! await CoreDataStack(
+                    modelName: "Shell",
+                    inMemory: true,
+                    logger: logger
+                )
+            }
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+        return stack
+    }()
 
     // MARK: - Boot Factory
 
@@ -293,5 +336,11 @@ final class AppDependencyContainer {
     /// - Returns: Shared network monitor instance
     func makeNetworkMonitor() -> NetworkMonitor {
         sharedNetworkMonitor
+    }
+
+    /// Create Core Data stack
+    /// - Returns: Shared Core Data stack instance
+    func makeCoreDataStack() -> CoreDataStack {
+        sharedCoreDataStack
     }
 }

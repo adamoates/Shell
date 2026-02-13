@@ -62,4 +62,24 @@ struct RepositoryConfig {
         return true  // Use HTTP in production
         #endif
     }
+
+    /// Use Core Data Items repository (true) or current implementation (false)
+    /// Set to true for local offline persistence
+    static var useCoreDataItemsRepository: Bool {
+        #if DEBUG
+        return false  // Disabled by default, toggle for testing
+        #else
+        return false  // Disabled in production until fully tested
+        #endif
+    }
+
+    /// Use Core Data UserProfile repository (true) or current implementation (false)
+    /// Set to true for local offline persistence
+    static var useCoreDataUserProfileRepository: Bool {
+        #if DEBUG
+        return false  // Disabled by default, toggle for testing
+        #else
+        return false  // Disabled in production until fully tested
+        #endif
+    }
 }
