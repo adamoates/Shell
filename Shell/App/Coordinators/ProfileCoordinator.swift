@@ -53,6 +53,7 @@ final class ProfileCoordinator: Coordinator {
             fetchProfile: fetchProfile
         )
         let viewController = ProfileViewController(viewModel: viewModel)
+        viewController.delegate = self
         navigationController.pushViewController(viewController, animated: true)
     }
 
@@ -74,6 +75,14 @@ final class ProfileCoordinator: Coordinator {
 
         // Push onto navigation stack
         navigationController.pushViewController(hostingController, animated: true)
+    }
+}
+
+// MARK: - ProfileViewControllerDelegate
+
+extension ProfileCoordinator: ProfileViewControllerDelegate {
+    func profileViewControllerDidRequestEdit(_ viewController: ProfileViewController) {
+        showProfileEditor()
     }
 }
 

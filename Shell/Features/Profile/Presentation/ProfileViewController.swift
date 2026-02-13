@@ -8,11 +8,17 @@
 import UIKit
 import Combine
 
+/// Delegate protocol for ProfileViewController navigation events
+protocol ProfileViewControllerDelegate: AnyObject {
+    func profileViewControllerDidRequestEdit(_ viewController: ProfileViewController)
+}
+
 /// Profile screen view controller
 /// Displays user profile information
 final class ProfileViewController: UIViewController {
     // MARK: - Properties
 
+    weak var delegate: ProfileViewControllerDelegate?
     private let viewModel: ProfileViewModel
     private var cancellables = Set<AnyCancellable>()
 
@@ -100,6 +106,16 @@ final class ProfileViewController: UIViewController {
         title = "Profile"
         view.backgroundColor = .systemBackground
 
+        // Add Edit button to navigation bar
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Edit",
+            style: .plain,
+            target: self,
+            action: #selector(editButtonTapped)
+        )
+        navigationItem.rightBarButtonItem?.accessibilityLabel = "Edit profile"
+        navigationItem.rightBarButtonItem?.accessibilityHint = "Double tap to edit your profile information"
+
         // Add subviews
         view.addSubview(scrollView)
         scrollView.addSubview(stackView)
@@ -155,6 +171,10 @@ final class ProfileViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func editButtonTapped() {
+        delegate?.profileViewControllerDidRequestEdit(self)
+    }
 
     private func loadProfile() {
         Task {
