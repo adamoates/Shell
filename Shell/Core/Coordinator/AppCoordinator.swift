@@ -108,8 +108,12 @@ final class AppCoordinator: Coordinator {
     /// - Parameter startStep: Optional starting step
     func showIdentitySetup(startStep: IdentityStep? = nil) {
         Task { @MainActor in
-            // TODO: Get actual userID from session
-            let userID = "current_user"  // Placeholder
+            // Get actual userID from current session
+            guard let userID = await getCurrentUserID() else {
+                logger.error("Cannot show identity setup: No active session", category: "coordinator")
+                showGuestFlow()
+                return
+            }
 
             let identityCoordinator = dependencyContainer.makeIdentitySetupCoordinator(
                 navigationController: navigationController,
@@ -177,6 +181,23 @@ extension AppCoordinator: LaunchRouting {
 // MARK: - Private Navigation
 
 private extension AppCoordinator {
+    /// Get the current user ID from the active session
+    /// - Returns: User ID if session exists and is valid, nil otherwise
+    func getCurrentUserID() async -> String? {
+        let sessionRepository = dependencyContainer.makeSessionRepository()
+
+        do {
+            guard let session = try await sessionRepository.getCurrentSession(),
+                  session.isValid else {
+                return nil
+            }
+            return session.userId
+        } catch {
+            logger.error("Failed to get current session", category: "coordinator", context: ["error": "\(error)"])
+            return nil
+        }
+    }
+
     @MainActor
     func showGuestFlow() {
         // Remove any existing child coordinators
@@ -317,9 +338,16 @@ extension AppCoordinator: ItemsCoordinatorDelegate {
 
     func itemsCoordinatorDidRequestProfile(_ coordinator: ItemsCoordinator) {
         logger.info("Profile view requested", category: "coordinator")
-        // TODO: Get actual userID from session
-        // For now, use a test userID
-        showProfile(userID: "current_user")
+
+        Task { @MainActor in
+            // Get actual userID from current session
+            guard let userID = await getCurrentUserID() else {
+                logger.error("Cannot show profile: No active session", category: "coordinator")
+                return
+            }
+
+            showProfile(userID: userID)
+        }
     }
 }
 
