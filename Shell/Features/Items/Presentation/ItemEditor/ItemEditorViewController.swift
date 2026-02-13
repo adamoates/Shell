@@ -16,6 +16,7 @@ final class ItemEditorViewController: UIViewController {
 
     private let viewModel: ItemEditorViewModel
     private var cancellables = Set<AnyCancellable>()
+    private var keyboardHandler: KeyboardHandler?
 
     // MARK: - UI Components
 
@@ -75,8 +76,9 @@ final class ItemEditorViewController: UIViewController {
         return toggle
     }()
 
-    private lazy var descriptionTextView: UITextView = {
-        let textView = UITextView()
+    private lazy var descriptionTextView: PlaceholderTextView = {
+        let textView = PlaceholderTextView()
+        textView.placeholder = "Description"
         textView.font = .systemFont(ofSize: 17)
         textView.layer.borderColor = UIColor.systemGray4.cgColor
         textView.layer.borderWidth = 1
@@ -156,13 +158,6 @@ final class ItemEditorViewController: UIViewController {
             // Description text view height
             descriptionTextView.heightAnchor.constraint(greaterThanOrEqualToConstant: 120)
         ])
-
-        // Add placeholder text for description if in create mode
-        if !viewModel.isEditMode {
-            descriptionTextView.text = "Description"
-            descriptionTextView.textColor = .placeholderText
-            descriptionTextView.delegate = self
-        }
     }
 
     private func setupNavigationBar() {
@@ -256,18 +251,7 @@ final class ItemEditorViewController: UIViewController {
     }
 
     private func setupKeyboardObservers() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillShow),
-            name: UIResponder.keyboardWillShowNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillHide),
-            name: UIResponder.keyboardWillHideNotification,
-            object: nil
-        )
+        keyboardHandler = KeyboardHandler(scrollView: scrollView)
     }
 
     // MARK: - Actions
@@ -284,34 +268,13 @@ final class ItemEditorViewController: UIViewController {
         // Sync text fields to view model
         viewModel.name = nameTextField.text ?? ""
         viewModel.isCompleted = completionSwitch.isOn
-
-        // Handle placeholder text for description
-        if descriptionTextView.textColor == .placeholderText {
-            viewModel.itemDescription = ""
-        } else {
-            viewModel.itemDescription = descriptionTextView.text ?? ""
-        }
+        viewModel.itemDescription = descriptionTextView.actualText
 
         // Dismiss keyboard
         view.endEditing(true)
 
         // Let view model handle validation and save
         viewModel.save()
-    }
-
-    @objc private func keyboardWillShow(notification: NSNotification) {
-        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
-            return
-        }
-
-        let contentInset = UIEdgeInsets(top: 0, left: 0, bottom: keyboardFrame.height, right: 0)
-        scrollView.contentInset = contentInset
-        scrollView.scrollIndicatorInsets = contentInset
-    }
-
-    @objc private func keyboardWillHide(notification: NSNotification) {
-        scrollView.contentInset = .zero
-        scrollView.scrollIndicatorInsets = .zero
     }
 
     private func showError(_ message: String) {
@@ -362,11 +325,6 @@ final class ItemEditorViewController: UIViewController {
         }
     }
 
-    // MARK: - Deinitialization
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -384,28 +342,5 @@ extension ItemEditorViewController: UITextFieldDelegate {
         if textField == nameTextField {
             viewModel.name = textField.text ?? ""
         }
-    }
-}
-
-// MARK: - UITextViewDelegate
-
-extension ItemEditorViewController: UITextViewDelegate {
-    func textViewDidBeginEditing(_ textView: UITextView) {
-        // Remove placeholder text when user starts editing
-        if textView.textColor == .placeholderText {
-            textView.text = ""
-            textView.textColor = .label
-        }
-    }
-
-    func textViewDidEndEditing(_ textView: UITextView) {
-        // Restore placeholder if empty
-        if textView.text.isEmpty {
-            textView.text = "Description"
-            textView.textColor = .placeholderText
-        }
-
-        // Sync changes to view model
-        viewModel.itemDescription = textView.textColor == .placeholderText ? "" : textView.text ?? ""
     }
 }

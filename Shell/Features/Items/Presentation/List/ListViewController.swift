@@ -28,35 +28,14 @@ class ListViewController: UIViewController {
         table.rowHeight = UITableView.automaticDimension
         table.estimatedRowHeight = 80
         table.translatesAutoresizingMaskIntoConstraints = false
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "ItemCell")
+        table.register(ItemTableViewCell.self, forCellReuseIdentifier: ItemTableViewCell.reuseIdentifier)
         return table
     }()
 
-    private lazy var emptyStateLabel: UILabel = {
-        let label = UILabel()
-        label.text = "No items available"
-        label.font = .systemFont(ofSize: 17, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-
-    private lazy var emptyStateView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .systemBackground
-        view.isHidden = true
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(emptyStateLabel)
-
-        NSLayoutConstraint.activate([
-            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            emptyStateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
-        ])
-
+    private lazy var emptyStateView: EmptyStateView = {
+        let view = EmptyStateView()
+        view.message = "No items available"
+        view.accessibilityHintText = "Pull down to refresh and load new items"
         return view
     }()
 
@@ -161,9 +140,6 @@ class ListViewController: UIViewController {
     }
 
     private func setupAccessibility() {
-        emptyStateLabel.accessibilityLabel = "No items available"
-        emptyStateLabel.accessibilityHint = "Pull down to refresh and load new items"
-
         navigationItem.leftBarButtonItem?.accessibilityLabel = "Logout"
         navigationItem.leftBarButtonItem?.accessibilityHint = "Double tap to log out and return to login screen"
 
@@ -246,26 +222,15 @@ extension ListViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ItemCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: ItemTableViewCell.reuseIdentifier,
+            for: indexPath
+        ) as? ItemTableViewCell else {
+            return UITableViewCell()
+        }
+
         let item = viewModel.items[indexPath.row]
-
-        var content = cell.defaultContentConfiguration()
-        content.text = item.name
-        content.secondaryText = item.description
-        content.textProperties.font = .preferredFont(forTextStyle: .headline)
-        content.secondaryTextProperties.font = .preferredFont(forTextStyle: .subheadline)
-        content.textProperties.adjustsFontForContentSizeCategory = true
-        content.secondaryTextProperties.adjustsFontForContentSizeCategory = true
-
-        cell.contentConfiguration = content
-
-        // Show checkmark if completed
-        cell.accessoryType = item.isCompleted ? .checkmark : .disclosureIndicator
-
-        // Accessibility
-        let completionStatus = item.isCompleted ? "completed" : "not completed"
-        cell.accessibilityLabel = "\(item.name), \(completionStatus)"
-        cell.accessibilityHint = "Double tap to view details"
+        cell.configure(with: item)
 
         return cell
     }
