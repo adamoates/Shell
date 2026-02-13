@@ -9,7 +9,7 @@ import UIKit
 import Combine
 
 /// Third step of identity setup: Choose avatar (optional)
-final class AvatarViewController: UIViewController {
+final class AvatarViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     // MARK: - Properties
 
     private let viewModel: IdentitySetupViewModel
@@ -146,11 +146,55 @@ final class AvatarViewController: UIViewController {
     // MARK: - Actions
 
     @objc private func choosePhotoTapped() {
-        // TODO: Implement photo picker
-        // For now, just show a placeholder and enable Next button
-        avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        // Check photo library authorization
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else {
+            showPhotoLibraryUnavailableAlert()
+            return
+        }
+
+        let picker = UIImagePickerController()
+        picker.delegate = self
+        picker.sourceType = .photoLibrary
+        picker.allowsEditing = true
+        present(picker, animated: true)
+    }
+
+    // MARK: - UIImagePickerControllerDelegate
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        picker.dismiss(animated: true)
+
+        // Get the selected image (prefer edited version if available)
+        guard let selectedImage = (info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage) else {
+            return
+        }
+
+        // Update UI with selected image
+        avatarImageView.image = selectedImage
         nextButton.isHidden = false
         skipButton.isHidden = true
+
+        // Generate a placeholder avatar URL using UI Avatars service
+        // In production, this would upload the image and get a real URL
+        let screenName = viewModel.screenName
+        let encodedName = screenName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "User"
+        viewModel.avatarURL = URL(string: "https://ui-avatars.com/api/?name=\(encodedName)&size=200&background=random")
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+    }
+
+    // MARK: - Helpers
+
+    private func showPhotoLibraryUnavailableAlert() {
+        let alert = UIAlertController(
+            title: "Photo Library Unavailable",
+            message: "Unable to access photo library on this device.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 
     @objc private func skipButtonTapped() {

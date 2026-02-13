@@ -168,6 +168,40 @@ final class ProfileViewController: UIViewController {
         }
     }
 
+    private func loadAvatarImage(from url: URL) {
+        Task {
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+
+                // Validate HTTP response
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    await showPlaceholderAvatar()
+                    return
+                }
+
+                // Create image from data
+                guard let image = UIImage(data: data) else {
+                    await showPlaceholderAvatar()
+                    return
+                }
+
+                // Update UI on main actor
+                await MainActor.run {
+                    self.avatarImageView.image = image
+                }
+            } catch {
+                await showPlaceholderAvatar()
+            }
+        }
+    }
+
+    @MainActor
+    private func showPlaceholderAvatar() {
+        avatarImageView.image = UIImage(systemName: "person.circle.fill")
+        avatarImageView.tintColor = .systemGray3
+    }
+
     private func updateUI(for state: ProfileState) {
         switch state {
         case .idle:
@@ -192,9 +226,13 @@ final class ProfileViewController: UIViewController {
             birthdayLabel.text = "Birthday: \(formatter.string(from: profile.birthday))"
 
             // Load avatar if available
-            // TODO: Load image from URL when avatarURL is present
-            // For now, always show placeholder
-            avatarImageView.image = UIImage(systemName: "person.circle.fill")
+            if let avatarURL = profile.avatarURL {
+                loadAvatarImage(from: avatarURL)
+            } else {
+                // Show placeholder when no avatar URL
+                avatarImageView.image = UIImage(systemName: "person.circle.fill")
+                avatarImageView.tintColor = .systemGray3
+            }
 
         case .error(let error):
             loadingIndicator.stopAnimating()
