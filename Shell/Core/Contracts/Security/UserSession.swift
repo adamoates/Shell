@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents an authenticated user session
-struct UserSession: Equatable {
+struct UserSession: Equatable, Codable, Sendable {
     let userId: String
     let accessToken: String
     let expiresAt: Date

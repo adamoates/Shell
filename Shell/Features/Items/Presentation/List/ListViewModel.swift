@@ -14,7 +14,8 @@ import Combine
 /// - Hold presentation state (items, loading, errors)
 /// - Delegate to FetchItemsUseCase for data loading
 /// - Handle user actions (refresh, delete)
-final class ListViewModel {
+@MainActor
+final class ListViewModel: ObservableObject {
     // MARK: - Published Properties
 
     @Published var items: [Item] = []
@@ -48,7 +49,6 @@ final class ListViewModel {
     }
 
     /// Refresh items (called on pull-to-refresh)
-    @MainActor
     func refreshItems() async {
         isLoading = true
         errorMessage = nil

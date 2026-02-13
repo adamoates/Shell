@@ -29,7 +29,8 @@ final class AppDependencyContainer {
 
     /// Shared session repository (singleton pattern)
     /// Session state must be shared across the app
-    private lazy var sharedSessionRepository: SessionRepository = InMemorySessionRepository()
+    /// Uses KeychainSessionRepository for secure, persistent storage
+    private lazy var sharedSessionRepository: SessionRepository = KeychainSessionRepository()
 
     /// Shared user profile repository (singleton pattern)
     /// Profile data must be shared across the app

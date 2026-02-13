@@ -45,6 +45,10 @@ final class AppCoordinator: Coordinator {
         setupUniversalLinkObserver()
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Coordinator
 
     func start() {
