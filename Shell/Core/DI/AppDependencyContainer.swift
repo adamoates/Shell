@@ -68,6 +68,10 @@ final class AppDependencyContainer {
         }
     }()
 
+    /// Shared network monitor (singleton pattern)
+    /// Network connectivity state must be shared across the app
+    private lazy var sharedNetworkMonitor: NetworkMonitor = NetworkMonitor()
+
     // MARK: - Boot Factory
 
     /// Create the app bootstrapper
@@ -117,6 +121,7 @@ final class AppDependencyContainer {
             createItem: makeCreateItemUseCase(),
             updateItem: makeUpdateItemUseCase(),
             deleteItem: makeDeleteItemUseCase(),
+            networkMonitor: makeNetworkMonitor(),
             logger: makeLogger()
         )
     }
@@ -282,5 +287,11 @@ final class AppDependencyContainer {
     /// - Returns: Shared items repository instance
     func makeItemsRepository() -> ItemsRepository {
         sharedItemsRepository
+    }
+
+    /// Create a network monitor
+    /// - Returns: Shared network monitor instance
+    func makeNetworkMonitor() -> NetworkMonitor {
+        sharedNetworkMonitor
     }
 }

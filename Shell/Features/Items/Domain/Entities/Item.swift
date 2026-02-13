@@ -9,7 +9,7 @@ import Foundation
 
 /// Domain entity representing an item in the list
 /// Schema aligned with backend API (Epic 3)
-struct Item: Equatable, Identifiable, Sendable {
+struct Item: Equatable, Identifiable, Sendable, Codable {
     let id: String
     let name: String
     let description: String

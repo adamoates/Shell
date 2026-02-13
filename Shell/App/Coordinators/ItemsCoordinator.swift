@@ -42,6 +42,7 @@ final class ItemsCoordinator: Coordinator {
     private let createItem: CreateItemUseCase
     private let updateItem: UpdateItemUseCase
     private let deleteItem: DeleteItemUseCase
+    private let networkMonitor: NetworkMonitor
     private let logger: Logger
 
     // MARK: - Initialization
@@ -52,6 +53,7 @@ final class ItemsCoordinator: Coordinator {
         createItem: CreateItemUseCase,
         updateItem: UpdateItemUseCase,
         deleteItem: DeleteItemUseCase,
+        networkMonitor: NetworkMonitor,
         logger: Logger
     ) {
         self.navigationController = navigationController
@@ -59,6 +61,7 @@ final class ItemsCoordinator: Coordinator {
         self.createItem = createItem
         self.updateItem = updateItem
         self.deleteItem = deleteItem
+        self.networkMonitor = networkMonitor
         self.logger = logger
     }
 
@@ -80,6 +83,7 @@ final class ItemsCoordinator: Coordinator {
         let viewModel = ListViewModel(fetchItems: fetchItems)
         let listVC = ListViewController(viewModel: viewModel, username: nil)
         listVC.delegate = self
+        listVC.setNetworkMonitor(networkMonitor)
 
         navigationController.setViewControllers([listVC], animated: false)
     }

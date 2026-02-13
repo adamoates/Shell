@@ -18,6 +18,7 @@ class ListViewController: UIViewController {
     private let viewModel: ListViewModel
     private var cancellables = Set<AnyCancellable>()
     private var refreshControl: UIRefreshControl!
+    private var networkMonitor: NetworkMonitor?
 
     // MARK: - UI Components
 
@@ -59,6 +60,7 @@ class ListViewController: UIViewController {
         setupTableView()
         setupAccessibility()
         setupBindings()
+        setupOfflineMonitoring()
         viewModel.loadItems()
     }
 
@@ -182,6 +184,18 @@ class ListViewController: UIViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func setupOfflineMonitoring() {
+        if let monitor = networkMonitor {
+            addOfflineMonitoring(networkMonitor: monitor)
+        }
+    }
+
+    // MARK: - Public Methods (for dependency injection)
+
+    func setNetworkMonitor(_ monitor: NetworkMonitor) {
+        self.networkMonitor = monitor
     }
 
     @objc private func refreshData() {
