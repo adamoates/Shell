@@ -14,16 +14,16 @@ final class LoginViewModelTests: XCTestCase {
 
     private var sut: LoginViewModel!
     private var validateCredentials: MockValidateCredentialsUseCase!
-    private var sessionRepository: MockSessionRepository!
+    private var loginUseCase: MockLoginUseCase!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         validateCredentials = MockValidateCredentialsUseCase()
-        sessionRepository = MockSessionRepository()
+        loginUseCase = MockLoginUseCase()
         sut = LoginViewModel(
             validateCredentials: validateCredentials,
-            sessionRepository: sessionRepository
+            login: loginUseCase
         )
         cancellables = []
     }
@@ -32,7 +32,7 @@ final class LoginViewModelTests: XCTestCase {
         cancellables = nil
         sut = nil
         validateCredentials = nil
-        sessionRepository = nil
+        loginUseCase = nil
         super.tearDown()
     }
 
@@ -68,6 +68,12 @@ final class LoginViewModelTests: XCTestCase {
         sut.username = "testuser"
         sut.password = "password123"
         validateCredentials.resultToReturn = .success(())
+        loginUseCase.sessionToReturn = UserSession(
+            userId: "testuser",
+            accessToken: "access123",
+            refreshToken: "refresh123",
+            expiresAt: Date().addingTimeInterval(900)
+        )
         let expectation = expectation(description: "Delegate called")
         delegate.onSuccess = {
             expectation.fulfill()
@@ -89,6 +95,12 @@ final class LoginViewModelTests: XCTestCase {
         sut.password = "password123"
         sut.errorMessage = "Previous error"
         validateCredentials.resultToReturn = .success(())
+        loginUseCase.sessionToReturn = UserSession(
+            userId: "testuser",
+            accessToken: "access123",
+            refreshToken: "refresh123",
+            expiresAt: Date().addingTimeInterval(900)
+        )
 
         // When
         sut.login()
@@ -98,21 +110,26 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertNil(sut.errorMessage)
     }
 
-    func testLogin_withValidCredentials_savesSession() async {
+    func testLogin_withValidCredentials_callsLoginUseCase() async {
         // Given
-        sut.username = "testuser"
+        sut.username = "testuser@example.com"
         sut.password = "password123"
         validateCredentials.resultToReturn = .success(())
+        loginUseCase.sessionToReturn = UserSession(
+            userId: "testuser",
+            accessToken: "access123",
+            refreshToken: "refresh123",
+            expiresAt: Date().addingTimeInterval(900)
+        )
 
         // When
         sut.login()
         await awaitLoginFlow()
 
         // Then
-        XCTAssertEqual(sessionRepository.saveSessionCallCount, 1)
-        XCTAssertEqual(sessionRepository.savedSession?.userId, "testuser")
-        XCTAssertNotNil(sessionRepository.savedSession?.accessToken)
-        XCTAssertTrue((sessionRepository.savedSession?.isValid) == true)
+        XCTAssertEqual(loginUseCase.executeCallCount, 1)
+        XCTAssertEqual(loginUseCase.lastEmail, "testuser@example.com")
+        XCTAssertEqual(loginUseCase.lastPassword, "password123")
     }
 
     // MARK: - Login Failure Tests
@@ -189,22 +206,22 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertFalse(delegate.didCallSuccess)
     }
 
-    func testLogin_whenSessionSaveFails_setsErrorAndDoesNotCallDelegate() async {
+    func testLogin_whenLoginUseCaseFails_setsErrorAndDoesNotCallDelegate() async {
         // Given
         let delegate = MockLoginViewModelDelegate()
         sut.delegate = delegate
         sut.username = "testuser"
         sut.password = "password123"
         validateCredentials.resultToReturn = .success(())
-        sessionRepository.saveError = SessionError.failed
+        loginUseCase.errorToThrow = AuthError.invalidCredentials
 
         // When
         sut.login()
         await awaitLoginFlow()
 
         // Then
-        XCTAssertEqual(sessionRepository.saveSessionCallCount, 1)
-        XCTAssertEqual(sut.errorMessage, "Failed to persist your session. Please try again.")
+        XCTAssertEqual(loginUseCase.executeCallCount, 1)
+        XCTAssertEqual(sut.errorMessage, "Invalid username or password")
         XCTAssertFalse(delegate.didCallSuccess)
     }
 
@@ -283,6 +300,32 @@ private class MockValidateCredentialsUseCase: ValidateCredentialsUseCase {
         executeWasCalled = true
         lastCredentials = credentials
         return resultToReturn
+    }
+}
+
+// MARK: - Mock LoginUseCase
+
+private final class MockLoginUseCase: LoginUseCase {
+    var executeCallCount = 0
+    var lastEmail: String?
+    var lastPassword: String?
+    var sessionToReturn: UserSession?
+    var errorToThrow: Error?
+
+    func execute(email: String, password: String) async throws -> UserSession {
+        executeCallCount += 1
+        lastEmail = email
+        lastPassword = password
+
+        if let error = errorToThrow {
+            throw error
+        }
+
+        guard let session = sessionToReturn else {
+            throw AuthError.invalidCredentials
+        }
+
+        return session
     }
 }
 

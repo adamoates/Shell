@@ -94,6 +94,7 @@ final class AuthGuardTests: XCTestCase {
         let validSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh-token",
             expiresAt: Date().addingTimeInterval(3600) // Expires in 1 hour
         )
         mockRepository.stubbedSession = validSession
@@ -108,6 +109,7 @@ final class AuthGuardTests: XCTestCase {
         let validSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh-token",
             expiresAt: Date().addingTimeInterval(3600)
         )
         mockRepository.stubbedSession = validSession
@@ -121,6 +123,7 @@ final class AuthGuardTests: XCTestCase {
         let validSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh-token",
             expiresAt: Date().addingTimeInterval(3600)
         )
         mockRepository.stubbedSession = validSession
@@ -162,6 +165,7 @@ final class AuthGuardTests: XCTestCase {
         let expiredSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh-token",
             expiresAt: Date().addingTimeInterval(-3600) // Expired 1 hour ago
         )
         mockRepository.stubbedSession = expiredSession

@@ -28,9 +28,14 @@ final class AuthenticationFlowTests: XCTestCase {
     func testLoginCreatesValidSession() async throws {
         // Arrange
         let validateCredentials = dependencyContainer.makeValidateCredentialsUseCase()
+        let mockAuthHTTPClient = MockAuthHTTPClient()
+        let loginUseCase = DefaultLoginUseCase(
+            authHTTPClient: mockAuthHTTPClient,
+            sessionRepository: sessionRepository
+        )
         let loginViewModel = LoginViewModel(
             validateCredentials: validateCredentials,
-            sessionRepository: sessionRepository
+            login: loginUseCase
         )
 
         loginViewModel.username = "test@example.com"
@@ -54,6 +59,7 @@ final class AuthenticationFlowTests: XCTestCase {
         let session = UserSession(
             userId: "test@example.com",
             accessToken: "test-token",
+            refreshToken: "test-refresh-token",
             expiresAt: Date().addingTimeInterval(3600)
         )
         try await sessionRepository.saveSession(session)
@@ -101,6 +107,7 @@ final class AuthenticationFlowTests: XCTestCase {
         let session = UserSession(
             userId: "test@example.com",
             accessToken: "test-token",
+            refreshToken: "test-refresh-token",
             expiresAt: Date().addingTimeInterval(3600)
         )
         try await sessionRepository.saveSession(session)
@@ -147,5 +154,33 @@ private class MockDogCoordinatorDelegate: DogCoordinatorDelegate {
 
     func dogCoordinatorDidRequestLogout(_ coordinator: DogCoordinator) {
         onLogout(coordinator)
+    }
+}
+
+// MARK: - Mock AuthHTTPClient
+
+private actor MockAuthHTTPClient: AuthHTTPClient {
+    func login(email: String, password: String) async throws -> AuthResponse {
+        AuthResponse(
+            accessToken: "mock-access-token",
+            refreshToken: "mock-refresh-token",
+            expiresIn: 900,
+            tokenType: "Bearer",
+            userID: email
+        )
+    }
+
+    func refresh(refreshToken: String) async throws -> AuthResponse {
+        AuthResponse(
+            accessToken: "new-mock-access-token",
+            refreshToken: "new-mock-refresh-token",
+            expiresIn: 900,
+            tokenType: "Bearer",
+            userID: "mock-user"
+        )
+    }
+
+    func logout(accessToken: String, refreshToken: String) async throws {
+        // Mock logout - do nothing
     }
 }

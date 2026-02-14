@@ -39,9 +39,8 @@ final class LoginViewModel: ObservableObject {
     weak var delegate: LoginViewModelDelegate?
 
     private let validateCredentials: ValidateCredentialsUseCase
-    private let sessionRepository: SessionRepository
+    private let loginUseCase: LoginUseCase
     private var cancellables = Set<AnyCancellable>()
-    private let sessionDuration: TimeInterval = 60 * 60 * 24 // 24 hours
 
     // MARK: - Rate Limiting Properties
 
@@ -53,10 +52,10 @@ final class LoginViewModel: ObservableObject {
 
     init(
         validateCredentials: ValidateCredentialsUseCase,
-        sessionRepository: SessionRepository
+        login: LoginUseCase
     ) {
         self.validateCredentials = validateCredentials
-        self.sessionRepository = sessionRepository
+        self.loginUseCase = login
     }
 
     // MARK: - Actions
@@ -101,38 +100,40 @@ final class LoginViewModel: ObservableObject {
 
         switch result {
         case .success:
-            // Persist authenticated session before reporting login success.
-            let session = UserSession(
-                userId: username,
-                accessToken: UUID().uuidString,
-                expiresAt: Date().addingTimeInterval(sessionDuration)
-            )
-
+            // Call backend login endpoint
             do {
-                try await sessionRepository.saveSession(session)
+                let session = try await loginUseCase.execute(email: username, password: password)
+
+                // Reset failure tracking
                 failedAttempts = 0
                 lockoutUntil = nil
-                delegate?.loginViewModelDidSucceed(self, username: username)
+
+                // Notify delegate of successful login
+                delegate?.loginViewModelDidSucceed(self, username: session.userId)
+            } catch let authError as AuthError {
+                // Backend authentication failed
+                failedAttempts += 1
+
+                // Apply lockout after 5 failed attempts
+                if failedAttempts >= 5 {
+                    let lockoutDuration: TimeInterval = 30 // 30 seconds lockout
+                    lockoutUntil = Date().addingTimeInterval(lockoutDuration)
+                    errorMessage = "Too many failed attempts. Account locked for 30 seconds."
+                } else if failedAttempts >= 3 {
+                    // After 3 failures, show warning
+                    errorMessage = "\(authError.userMessage). \(6 - failedAttempts) attempts remaining."
+                } else {
+                    // Show normal error message
+                    errorMessage = authError.userMessage
+                }
             } catch {
-                errorMessage = "Failed to persist your session. Please try again."
+                // Network or other error
+                errorMessage = "Unable to connect. Please check your internet connection and try again."
             }
 
         case .failure(let error):
-            // Validation failed - increment counter and apply exponential backoff
-            failedAttempts += 1
-
-            // Apply lockout after 5 failed attempts
-            if failedAttempts >= 5 {
-                let lockoutDuration: TimeInterval = 30 // 30 seconds lockout
-                lockoutUntil = Date().addingTimeInterval(lockoutDuration)
-                errorMessage = "Too many failed attempts. Account locked for 30 seconds."
-            } else if failedAttempts >= 3 {
-                // After 3 failures, show warning
-                errorMessage = "\(error.userMessage). \(6 - failedAttempts) attempts remaining."
-            } else {
-                // Show normal error message
-                errorMessage = error.userMessage
-            }
+            // Client-side validation failed
+            errorMessage = error.userMessage
         }
 
         isLoading = false

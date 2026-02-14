@@ -63,6 +63,7 @@ final class RestoreSessionUseCaseTests: XCTestCase {
         let validSession = UserSession(
             userId: "user123",
             accessToken: "valid_token",
+            refreshToken: "valid_refresh_token",
             expiresAt: Date().addingTimeInterval(3600) // Expires in 1 hour
         )
 
@@ -87,6 +88,7 @@ final class RestoreSessionUseCaseTests: XCTestCase {
         let expiredSession = UserSession(
             userId: "user123",
             accessToken: "expired_token",
+            refreshToken: "expired_refresh_token",
             expiresAt: Date().addingTimeInterval(-3600) // Expired 1 hour ago
         )
 
@@ -132,6 +134,7 @@ final class RestoreSessionUseCaseTests: XCTestCase {
         let almostExpiredSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh_token",
             expiresAt: Date().addingTimeInterval(1) // Expires in 1 second
         )
 
@@ -152,6 +155,7 @@ final class RestoreSessionUseCaseTests: XCTestCase {
         let justExpiredSession = UserSession(
             userId: "user123",
             accessToken: "token",
+            refreshToken: "refresh_token",
             expiresAt: Date().addingTimeInterval(-1) // Expired 1 second ago
         )
 

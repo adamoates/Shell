@@ -10,10 +10,12 @@ import Foundation
 /// Protocol for managing user session persistence
 ///
 /// Implementations might use:
-/// - Keychain for secure storage
+/// - Keychain for secure storage (actor-based for thread safety)
 /// - UserDefaults for non-sensitive data
 /// - In-memory storage for testing
-protocol SessionRepository: AnyObject {
+///
+/// Note: This protocol is designed to be implemented by actors for Swift 6 concurrency safety
+protocol SessionRepository: Sendable {
     /// Get the current user session
     /// - Returns: The current session if one exists and is valid, nil otherwise
     /// - Throws: If session data is corrupted or cannot be accessed

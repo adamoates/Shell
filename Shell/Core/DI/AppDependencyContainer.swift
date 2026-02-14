@@ -120,6 +120,40 @@ final class AppDependencyContainer {
         return stack
     }()
 
+    // MARK: - Auth Infrastructure
+
+    /// Shared auth HTTP client (singleton pattern)
+    /// Auth client must be shared for consistent auth state
+    private lazy var sharedAuthHTTPClient: AuthHTTPClient = {
+        // Auth endpoints are at root level (/auth/*), not under /v1
+        // Remove /v1 suffix from base URL for auth client
+        let baseURL = APIConfig.current.baseURL
+        let authBaseURL = baseURL.deletingLastPathComponent()
+
+        return URLSessionAuthHTTPClient(
+            session: .shared,
+            baseURL: authBaseURL
+        )
+    }()
+
+    /// Shared auth request interceptor (singleton pattern)
+    /// Interceptor must be shared to coordinate token refresh across concurrent requests
+    private lazy var sharedAuthInterceptor: AuthRequestInterceptor = {
+        AuthRequestInterceptor(
+            sessionRepository: makeSessionRepository(),
+            authHTTPClient: makeAuthHTTPClient()
+        )
+    }()
+
+    /// Shared authenticated HTTP client (singleton pattern)
+    /// HTTP client must be shared for consistent auth state and request interception
+    private lazy var sharedAuthenticatedHTTPClient: AuthenticatedHTTPClient = {
+        AuthenticatedHTTPClient(
+            session: .shared,
+            interceptor: makeAuthInterceptor()
+        )
+    }()
+
     // MARK: - Boot Factory
 
     /// Create the app bootstrapper
@@ -155,7 +189,7 @@ final class AppDependencyContainer {
         AuthCoordinator(
             navigationController: navigationController,
             validateCredentials: makeValidateCredentialsUseCase(),
-            sessionRepository: makeSessionRepository(),
+            login: makeLoginUseCase(),
             logger: makeLogger()
         )
     }
@@ -274,6 +308,33 @@ final class AppDependencyContainer {
     /// - Returns: New instance of ValidateCredentialsUseCase
     func makeValidateCredentialsUseCase() -> ValidateCredentialsUseCase {
         DefaultValidateCredentialsUseCase()
+    }
+
+    /// Create a Login use case
+    /// - Returns: New instance of LoginUseCase
+    func makeLoginUseCase() -> LoginUseCase {
+        DefaultLoginUseCase(
+            authHTTPClient: makeAuthHTTPClient(),
+            sessionRepository: makeSessionRepository()
+        )
+    }
+
+    /// Create a Logout use case
+    /// - Returns: New instance of LogoutUseCase
+    func makeLogoutUseCase() -> LogoutUseCase {
+        DefaultLogoutUseCase(
+            authHTTPClient: makeAuthHTTPClient(),
+            sessionRepository: makeSessionRepository()
+        )
+    }
+
+    /// Create a RefreshSession use case
+    /// - Returns: New instance of RefreshSessionUseCase
+    func makeRefreshSessionUseCase() -> RefreshSessionUseCase {
+        DefaultRefreshSessionUseCase(
+            authHTTPClient: makeAuthHTTPClient(),
+            sessionRepository: makeSessionRepository()
+        )
     }
 
     /// Create a FetchItems use case
@@ -399,5 +460,23 @@ final class AppDependencyContainer {
     /// - Returns: Shared Core Data stack instance
     func makeCoreDataStack() -> CoreDataStack {
         sharedCoreDataStack
+    }
+
+    /// Create auth HTTP client
+    /// - Returns: Shared auth HTTP client instance
+    func makeAuthHTTPClient() -> AuthHTTPClient {
+        sharedAuthHTTPClient
+    }
+
+    /// Create auth request interceptor
+    /// - Returns: Shared auth request interceptor instance
+    func makeAuthInterceptor() -> AuthRequestInterceptor {
+        sharedAuthInterceptor
+    }
+
+    /// Create authenticated HTTP client
+    /// - Returns: Shared authenticated HTTP client instance
+    func makeAuthenticatedHTTPClient() -> AuthenticatedHTTPClient {
+        sharedAuthenticatedHTTPClient
     }
 }

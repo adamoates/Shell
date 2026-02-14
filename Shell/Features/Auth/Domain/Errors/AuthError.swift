@@ -27,6 +27,21 @@ enum AuthError: Error, Equatable {
     /// Network error occurred
     case networkError
 
+    /// Access token has expired
+    case tokenExpired
+
+    /// No refresh token available in session
+    case noRefreshToken
+
+    /// Failed to refresh the session
+    case refreshFailed
+
+    /// Keychain storage error
+    case keychainError(OSStatus)
+
+    /// Invalid server response
+    case invalidResponse
+
     /// Unknown error
     case unknown(String)
 }
@@ -49,6 +64,16 @@ extension AuthError {
             return "Invalid username or password"
         case .networkError:
             return "Network connection failed. Please try again."
+        case .tokenExpired:
+            return "Your session has expired"
+        case .noRefreshToken:
+            return "No refresh token available"
+        case .refreshFailed:
+            return "Failed to refresh session"
+        case .keychainError(let status):
+            return "Keychain error: \(status)"
+        case .invalidResponse:
+            return "Invalid server response"
         case .unknown(let message):
             return message
         }

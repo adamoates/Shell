@@ -7,6 +7,8 @@
 
 import Foundation
 
+// Note: HTTPError is now defined in HTTPError.swift for reusability across HTTP clients
+
 /// HTTP client abstraction for Items network requests
 /// Allows mocking for tests using URLProtocol
 protocol ItemsHTTPClient: Sendable {
@@ -116,25 +118,4 @@ actor URLSessionItemsHTTPClient: ItemsHTTPClient {
     }
 }
 
-/// HTTP errors
-enum HTTPError: Error, Equatable {
-    case invalidResponse
-    case httpError(statusCode: Int, data: Data?)
-    case decodingError(underlying: Error)
-    case networkError(underlying: Error)
-
-    static func == (lhs: HTTPError, rhs: HTTPError) -> Bool {
-        switch (lhs, rhs) {
-        case (.invalidResponse, .invalidResponse):
-            return true
-        case (.httpError(let lhsCode, _), .httpError(let rhsCode, _)):
-            return lhsCode == rhsCode
-        case (.decodingError, .decodingError):
-            return true
-        case (.networkError, .networkError):
-            return true
-        default:
-            return false
-        }
-    }
-}
+// HTTPError moved to Shell/Core/Infrastructure/HTTP/HTTPError.swift for reusability
