@@ -38,6 +38,74 @@ Shell/
 
 ---
 
+## iOS Development Configuration
+
+### Tech Stack
+- **Language**: Swift 6 (strict concurrency enabled)
+- **UI Framework**: UIKit (programmatic, no storyboards)
+- **Architecture**: Clean Architecture + MVVM + Coordinator pattern
+- **Dependency Manager**: Swift Package Manager (SPM)
+- **Testing**: XCTest (unit + integration tests)
+- **Minimum Target**: iOS 26.2
+
+### Build & Test Commands
+
+**Build**:
+```bash
+xcodebuild build -scheme Shell -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+**Test** (with verification):
+```bash
+xcodebuild test -scheme Shell -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -skip-testing:ShellUITests 2>&1 | tee /tmp/shell_last_test.log
+date +%s > /tmp/shell_last_test_time
+```
+
+**Launch in Simulator**:
+```bash
+xcodebuild build -scheme Shell -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcrun simctl launch booted com.adamcodertrader.Shell
+xcrun simctl io booted screenshot /tmp/shell-verify.png
+```
+
+### Verification Loop (Critical for iOS)
+
+**After every code change**:
+1. **Build**: Run `xcodebuild build`
+2. **Test**: Run `xcodebuild test`
+3. **Verify**: Check for `** TEST SUCCEEDED **`
+4. **Launch**: Start app in simulator
+5. **Screenshot**: Capture UI state with `xcrun simctl io booted screenshot`
+6. **Review**: Read screenshot to verify UI matches expectations
+
+**NEVER assume** a build or test passes. iOS compilation errors are common and must be caught early.
+
+### iOS Coding Rules
+
+- **Value Types First**: Prefer `struct` over `class` unless reference semantics needed
+- **Concurrency**: Use `async/await` + actors; avoid completion handlers
+- **Main Actor**: All UI code must be `@MainActor`
+- **Sendable**: Cross-actor types must conform to `Sendable`
+- **No Force Unwrap**: Never use `!`, `try!`, or `as!`
+- **No Storyboards**: All UI is programmatic with Auto Layout
+- **No Global State**: Use dependency injection via AppDependencyContainer
+
+### Common Xcode Issues
+
+**Issue**: "Cannot find 'X' in scope"
+**Fix**: File not added to target → Check Xcode target membership
+
+**Issue**: Tests fail with "No such module"
+**Fix**: Missing `@testable import Shell` or target dependencies
+
+**Issue**: Simulator not booting
+**Fix**: `xcrun simctl list devices` → `xcrun simctl boot <device-id>`
+
+**Issue**: App not installing
+**Fix**: Clean: `xcodebuild clean` then rebuild
+
+---
+
 ## Patterns
 
 ### Navigation
