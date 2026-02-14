@@ -32,14 +32,17 @@ final class AuthIntegrationTests: XCTestCase {
     var logoutUseCase: LogoutUseCase!
     var refreshUseCase: RefreshSessionUseCase!
 
-    // Test user credentials
-    let testEmail = "integration-test@example.com"
+    // Test user credentials (unique per test method to avoid interference)
+    var testEmail: String!
     let testPassword = "TestPass123@"
 
     // MARK: - Setup & Teardown
 
     override func setUp() async throws {
         try await super.setUp()
+
+        // Generate unique email for this test method (avoids test interference)
+        testEmail = "integration-test-\(Int(Date().timeIntervalSince1970))-\(UUID().uuidString.prefix(8))@example.com"
 
         // Check if backend is running
         guard await isBackendRunning() else {
@@ -61,8 +64,10 @@ final class AuthIntegrationTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        // Clean up: logout and clear session
-        try? await logoutUseCase.execute()
+        // Clean up: logout if session exists, then clear
+        if let session = try? await sessionRepository.getCurrentSession(), session.isValid {
+            try? await logoutUseCase.execute()
+        }
         try await sessionRepository.clearSession()
 
         dependencyContainer = nil
@@ -71,6 +76,7 @@ final class AuthIntegrationTests: XCTestCase {
         loginUseCase = nil
         logoutUseCase = nil
         refreshUseCase = nil
+        testEmail = nil
 
         try await super.tearDown()
     }
@@ -125,7 +131,7 @@ final class AuthIntegrationTests: XCTestCase {
         let session = try await loginUseCase.execute(email: testEmail, password: testPassword)
 
         // Then: Session should be saved to Keychain
-        XCTAssertEqual(session.userId, testEmail, "User ID should match email")
+        XCTAssertFalse(session.userId.isEmpty, "User ID should not be empty")
         XCTAssertFalse(session.accessToken.isEmpty, "Access token should not be empty")
         XCTAssertFalse(session.refreshToken.isEmpty, "Refresh token should not be empty")
         XCTAssertTrue(session.isValid, "Session should be valid")
@@ -133,7 +139,7 @@ final class AuthIntegrationTests: XCTestCase {
         // Verify session is in Keychain
         let retrievedSession = try await sessionRepository.getCurrentSession()
         XCTAssertNotNil(retrievedSession, "Session should be in Keychain")
-        XCTAssertEqual(retrievedSession?.userId, testEmail)
+        XCTAssertEqual(retrievedSession?.userId, session.userId, "Keychain userId should match session")
         XCTAssertEqual(retrievedSession?.accessToken, session.accessToken)
         XCTAssertEqual(retrievedSession?.refreshToken, session.refreshToken)
     }
@@ -163,6 +169,13 @@ final class AuthIntegrationTests: XCTestCase {
     func testTokenRefresh_withValidRefreshToken_returnsNewTokens() async throws {
         // Given: Valid session
         let originalSession = try await loginUseCase.execute(email: testEmail, password: testPassword)
+        XCTAssertFalse(originalSession.userId.isEmpty, "Original session should have userId")
+        XCTAssertFalse(originalSession.refreshToken.isEmpty, "Original session should have refreshToken")
+
+        // Verify session was saved to Keychain
+        let savedSession = try await sessionRepository.getCurrentSession()
+        XCTAssertNotNil(savedSession, "Session should be saved in Keychain after login")
+        XCTAssertEqual(savedSession?.refreshToken, originalSession.refreshToken, "Keychain session should match original")
 
         // Wait a moment to ensure timestamps differ
         try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second

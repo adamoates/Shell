@@ -41,10 +41,10 @@ final class URLSessionAuthHTTPClientTests: XCTestCase {
         // Given: Successful login response
         let responseJSON = """
         {
-            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-            "refresh_token": "refresh-token-uuid",
-            "expires_in": 900,
-            "token_type": "Bearer",
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+            "refreshToken": "refresh-token-uuid",
+            "expiresIn": 900,
+            "tokenType": "Bearer",
             "userID": "user-123"
         }
         """
@@ -97,10 +97,10 @@ final class URLSessionAuthHTTPClientTests: XCTestCase {
         // Given: Successful refresh response
         let responseJSON = """
         {
-            "access_token": "new-access-token",
-            "refresh_token": "new-refresh-token",
-            "expires_in": 900,
-            "token_type": "Bearer",
+            "accessToken": "new-access-token",
+            "refreshToken": "new-refresh-token",
+            "expiresIn": 900,
+            "tokenType": "Bearer",
             "userID": "user-123"
         }
         """

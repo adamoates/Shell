@@ -31,15 +31,22 @@ final class DefaultRefreshSessionUseCase: RefreshSessionUseCase {
             throw AuthError.noRefreshToken
         }
 
-        // Call backend refresh endpoint with refresh token
-        let response = try await authHTTPClient.refresh(refreshToken: currentSession.refreshToken)
+        do {
+            // Call backend refresh endpoint with refresh token
+            let response = try await authHTTPClient.refresh(refreshToken: currentSession.refreshToken)
 
-        // Convert response to new session (tokens are rotated)
-        let newSession = response.session
+            // Convert response to new session (tokens are rotated)
+            let newSession = response.session
 
-        // Save new session to Keychain (replaces old session)
-        try await sessionRepository.saveSession(newSession)
+            // Save new session to Keychain (replaces old session)
+            try await sessionRepository.saveSession(newSession)
 
-        return newSession
+            return newSession
+        } catch {
+            // Security: Clear session on refresh failure (token might be compromised)
+            // This protects against token reuse attacks
+            try? await sessionRepository.clearSession()
+            throw error
+        }
     }
 }

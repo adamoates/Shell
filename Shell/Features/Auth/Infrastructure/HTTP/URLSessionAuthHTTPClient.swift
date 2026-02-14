@@ -56,7 +56,7 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+        // Backend expects camelCase JSON, no snake_case conversion needed
         request.httpBody = try encoder.encode(requestBody)
 
         let (_, response) = try await session.data(for: request)
@@ -85,7 +85,7 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+        // Backend expects camelCase JSON, no snake_case conversion needed
         request.httpBody = try encoder.encode(body)
 
         let (data, response) = try await session.data(for: request)
@@ -99,7 +99,7 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
         }
 
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        // Backend sends camelCase JSON, no snake_case conversion needed
         decoder.dateDecodingStrategy = .iso8601
 
         do {

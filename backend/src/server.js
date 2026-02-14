@@ -482,12 +482,13 @@ app.post('/auth/refresh', refreshLimiter, async (req, res) => {
     );
     
     await logAuthEvent(user.user_id, 'refresh', true, ipAddress, userAgent);
-    
+
     res.json({
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
       expiresIn: 900,
-      tokenType: 'Bearer'
+      tokenType: 'Bearer',
+      userID: user.user_id
     });
   } catch (error) {
     console.error('Error during token refresh:', error);
