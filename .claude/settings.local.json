@@ -46,5 +46,38 @@
       "Skill(/code-quality-check)",
       "Bash(find:*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "swiftlint --fix --path ${file} 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "swiftlint --fix --path ${file} 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash.*git push",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "User is about to push to remote. Confirm this is intentional before proceeding."
+          }
+        ]
+      }
+    ]
   }
 }
