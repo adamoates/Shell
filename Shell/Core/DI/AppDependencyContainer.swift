@@ -81,6 +81,11 @@ final class AppDependencyContainer {
     /// Network connectivity state must be shared across the app
     private lazy var sharedNetworkMonitor: NetworkMonitor = NetworkMonitor()
 
+    /// Shared dog repository (singleton pattern)
+    /// Dog data must be shared across the app
+    /// Currently uses in-memory storage (can be upgraded to Core Data/HTTP later)
+    private lazy var sharedDogRepository: DogRepository = InMemoryDogRepository()
+
     /// Shared Core Data stack (singleton pattern)
     /// Core Data stack must be shared across the app for consistent persistence
     private lazy var sharedCoreDataStack: CoreDataStack = {
@@ -150,6 +155,7 @@ final class AppDependencyContainer {
         AuthCoordinator(
             navigationController: navigationController,
             validateCredentials: makeValidateCredentialsUseCase(),
+            sessionRepository: makeSessionRepository(),
             logger: makeLogger()
         )
     }
@@ -199,6 +205,16 @@ final class AppDependencyContainer {
             userID: userID,
             completeIdentitySetup: makeCompleteIdentitySetupUseCase(),
             startStep: startStep
+        )
+    }
+
+    /// Create a dog coordinator
+    /// - Parameter navigationController: The navigation controller to use
+    /// - Returns: Configured dog coordinator
+    func makeDogCoordinator(navigationController: UINavigationController) -> DogCoordinator {
+        DogCoordinator(
+            navigationController: navigationController,
+            dependencyContainer: self
         )
     }
 
@@ -300,6 +316,41 @@ final class AppDependencyContainer {
         )
     }
 
+    // MARK: - Dog Use Cases
+
+    func makeFetchDogsUseCase() -> FetchDogsUseCase {
+        DefaultFetchDogsUseCase(repository: makeDogRepository())
+    }
+
+    func makeCreateDogUseCase() -> CreateDogUseCase {
+        DefaultCreateDogUseCase(repository: makeDogRepository())
+    }
+
+    func makeUpdateDogUseCase() -> UpdateDogUseCase {
+        DefaultUpdateDogUseCase(repository: makeDogRepository())
+    }
+
+    func makeDeleteDogUseCase() -> DeleteDogUseCase {
+        DefaultDeleteDogUseCase(repository: makeDogRepository())
+    }
+
+    // MARK: - Dog ViewModels
+
+    func makeDogListViewModel() -> DogListViewModel {
+        DogListViewModel(
+            fetchDogsUseCase: makeFetchDogsUseCase(),
+            deleteDogUseCase: makeDeleteDogUseCase()
+        )
+    }
+
+    func makeDogEditorViewModel(dog: Dog? = nil) -> DogEditorViewModel {
+        DogEditorViewModel(
+            dog: dog,
+            createDogUseCase: makeCreateDogUseCase(),
+            updateDogUseCase: makeUpdateDogUseCase()
+        )
+    }
+
     // MARK: - Infrastructure Factory
 
     /// Create a logger
@@ -330,6 +381,12 @@ final class AppDependencyContainer {
     /// - Returns: Shared items repository instance
     func makeItemsRepository() -> ItemsRepository {
         sharedItemsRepository
+    }
+
+    /// Create a dog repository
+    /// - Returns: Shared dog repository instance
+    func makeDogRepository() -> DogRepository {
+        sharedDogRepository
     }
 
     /// Create a network monitor

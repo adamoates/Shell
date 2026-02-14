@@ -1,148 +1,104 @@
-# Shell iOS App - Claude Code Context
+# Context - Product Development Templates
 
-## Overview
+**Reference documentation for building products on Shell**
 
-This directory contains the **master requirements, rules, and standards** for the Shell iOS app.
+---
 
-**These are non-negotiable.** Every line of code must meet these standards.
+## Purpose
+
+Shell provides **Clean Architecture + MVVM** patterns.
+
+These templates help you **build real-world products** using Shell as your foundation.
+
+---
 
 ## Files in This Directory
 
-### Core Requirements
-- **[requirements.md](requirements.md)** - Master requirements and app concept
-  - Global objectives
-  - App concept (Field Notes / Shell)
-  - UI strategy
-  - Acceptance criteria
-  - Success metrics
+### Core Workflow
+- **[branch-strategy.md](branch-strategy.md)** - Git workflow and branching strategy
+- **[workflow-product.md](workflow-product.md)** - How to build features (vertical slices, TDD, MVP)
 
-### Architecture & Design
-- **[architecture.md](architecture.md)** - Architecture rules and patterns
-  - Clean Architecture (Domain → Data ← UI)
-  - Layer responsibilities and dependencies
-  - Design patterns with justifications
-  - Testing strategies per layer
+### Product Strategy
+- **[product-strategy.md](product-strategy.md)** - Define niche, persona, differentiation, MVP scope
 
-- **[design-patterns.md](design-patterns.md)** - Pattern reference guide
-  - When and how to use each pattern
-  - Code examples for all patterns
-  - Pattern selection guide
-  - Anti-patterns to avoid
+### Team Growth
+- **[team-scaling.md](team-scaling.md)** - Scale from 1 to 15 engineers without slowing down
 
-- **[project-structure.md](project-structure.md)** - Folder organization
-  - Directory structure
-  - File naming conventions
-  - Import rules per layer
-  - How to create new features
+### Domain Examples
+- **[booking-scheduling.md](booking-scheduling.md)** - Build scheduling systems (appointments, bookings)
 
-### Code Quality
-- **[code-quality.md](code-quality.md)** - Code quality standards
-  - Naming conventions
-  - Function/class size limits
-  - Error handling rules
-  - Comment guidelines
-  - SwiftLint configuration
-  - Complexity metrics
+---
 
-### Testing
-- **[tdd-requirements.md](tdd-requirements.md)** - TDD requirements
-  - Test-first approach
-  - What must be tested (coverage targets)
-  - Test structure (AAA pattern)
-  - Test doubles (mocks, stubs, fakes)
-  - Integration test strategies
+## When to Use These
 
-### Process
-- **[branch-strategy.md](branch-strategy.md)** - Branch workflow
-  - Branch naming convention
-  - One branch = one vertical slice
-  - Branch content requirements
-  - Merge checklist
+### Starting a New Product
+1. Read [product-strategy.md](product-strategy.md) to define your niche
+2. Define MVP scope
+3. Use [workflow-product.md](workflow-product.md) for development
 
-## How to Use This Context
+### Building Scheduling Features
+1. Read [booking-scheduling.md](booking-scheduling.md)
+2. Follow MVP approach (simple first)
+3. Iterate based on user feedback
 
-### When Starting Work
-1. Read [requirements.md](requirements.md) to understand the app vision
-2. Review [architecture.md](architecture.md) for architecture rules
-3. Check [project-structure.md](project-structure.md) for where files go
+### Growing Your Team
+1. Read [team-scaling.md](team-scaling.md)
+2. Understand scaling stages
+3. Hire product engineers first
 
-### When Writing Code
-1. Follow [code-quality.md](code-quality.md) standards
-2. Use [design-patterns.md](design-patterns.md) as a reference
-3. Apply [tdd-requirements.md](tdd-requirements.md) for testing
+### Daily Development
+1. Use **[PLAYBOOK.md](../PLAYBOOK.md)** for workflow
+2. Reference **[CLAUDE.md](../CLAUDE.md)** for architecture
+3. Use these templates when starting new work
 
-### When Creating a Branch
-1. Follow [branch-strategy.md](branch-strategy.md)
-2. Ensure all quality standards met
-3. Write comprehensive documentation
+---
 
-### When Reviewing Code
-Use these files as the review criteria:
-- Architecture boundaries respected?
-- Code quality standards met?
-- Tests written first?
-- Design patterns used appropriately?
+## What These Are NOT
 
-## The Standard
+❌ **Not mandatory process** - These are templates and references
+❌ **Not daily workflow** - Use PLAYBOOK.md for daily work
+❌ **Not Shell core docs** - Shell architecture is in CLAUDE.md
 
-This codebase must:
-- ✅ Pass staff-level code review
-- ✅ Scale to new features easily
-- ✅ Survive refactors safely
-- ✅ Be maintainable for years
-- ✅ Demonstrate production practices
+✅ **ARE templates** - Examples for building products
+✅ **ARE reference** - Consult when needed
+✅ **ARE reusable** - Apply to any product on Shell
 
-Not:
-- ❌ A tutorial or demo app
-- ❌ Quick and dirty prototypes
-- ❌ Cutting corners for speed
-- ❌ Accepting technical debt
+---
 
-## Quick Reference Card
+## Philosophy
 
-### Architecture
-```
-UI → Domain ← Data
-```
-- Domain: Pure business logic, no dependencies
-- Data: Implements domain protocols
-- UI: Uses domain use cases
+### Shell = Framework
+Clean Architecture + MVVM + Swift 6
 
-### Patterns
-- Navigation: Coordinator
-- Presentation: MVVM
-- Business Logic: Use Case
-- Data Access: Repository
-- Platform Integration: Adapter
-- Cross-cutting: Decorator
+### These Templates = Product Guidance
+How to build Rover, Field Notes, Habit Tracker, etc. using Shell
 
-### Quality
-- Zero warnings
-- Zero force unwraps
-- Functions < 50 lines
-- Classes < 300 lines
-- Cyclomatic complexity < 10
-- >80% test coverage
+### Separation Keeps Shell Reusable
+- Shell doesn't care about dogs or bookings
+- Your product does
+- Templates bridge the gap
 
-### Testing
-- Tests first (TDD)
-- Use cases: 100% covered
-- ViewModels: 100% covered
-- Repositories: 80%+ covered
-- Deterministic, fast, independent
+---
 
-### Process
-- One branch per feature
-- Complete vertical slices
-- Documentation required
-- All tests pass before merge
-- Clean git history
+## Recommended Reading Order
 
-## Questions?
+### First Time Building on Shell
+1. PLAYBOOK.md (daily workflow)
+2. CLAUDE.md (architecture reference)
+3. product-strategy.md (define your product)
+4. workflow-product.md (build features)
 
-If anything is unclear:
-1. Check the relevant file in this directory
-2. Look at existing code for examples
-3. Ask for clarification
+### Starting a Scheduling Product
+1. product-strategy.md (define niche)
+2. booking-scheduling.md (domain model)
+3. workflow-product.md (build MVP)
 
-**These standards are the foundation of quality. No exceptions.**
+### Scaling Your Team
+1. team-scaling.md (understand stages)
+2. Hire product engineers
+3. Use vertical ownership model
+
+---
+
+**Last Updated:** 2026-02-14
+**Purpose:** Product development templates for Shell-based products

@@ -32,6 +32,7 @@ final class AuthCoordinator: Coordinator {
     weak var delegate: AuthCoordinatorDelegate?
 
     private let validateCredentials: ValidateCredentialsUseCase
+    private let sessionRepository: SessionRepository
     private let logger: Logger
 
     // MARK: - Initialization
@@ -39,10 +40,12 @@ final class AuthCoordinator: Coordinator {
     init(
         navigationController: UINavigationController,
         validateCredentials: ValidateCredentialsUseCase,
+        sessionRepository: SessionRepository,
         logger: Logger
     ) {
         self.navigationController = navigationController
         self.validateCredentials = validateCredentials
+        self.sessionRepository = sessionRepository
         self.logger = logger
     }
 
@@ -61,7 +64,10 @@ final class AuthCoordinator: Coordinator {
     @MainActor
     private func showLogin() {
         // Create and inject ViewModel
-        let viewModel = LoginViewModel(validateCredentials: validateCredentials)
+        let viewModel = LoginViewModel(
+            validateCredentials: validateCredentials,
+            sessionRepository: sessionRepository
+        )
         let loginVC = LoginViewController(viewModel: viewModel)
         loginVC.delegate = self
 

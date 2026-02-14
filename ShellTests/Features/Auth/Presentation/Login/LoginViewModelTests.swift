@@ -14,12 +14,17 @@ final class LoginViewModelTests: XCTestCase {
 
     private var sut: LoginViewModel!
     private var validateCredentials: MockValidateCredentialsUseCase!
+    private var sessionRepository: MockSessionRepository!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         validateCredentials = MockValidateCredentialsUseCase()
-        sut = LoginViewModel(validateCredentials: validateCredentials)
+        sessionRepository = MockSessionRepository()
+        sut = LoginViewModel(
+            validateCredentials: validateCredentials,
+            sessionRepository: sessionRepository
+        )
         cancellables = []
     }
 
@@ -27,7 +32,13 @@ final class LoginViewModelTests: XCTestCase {
         cancellables = nil
         sut = nil
         validateCredentials = nil
+        sessionRepository = nil
         super.tearDown()
+    }
+
+    private func awaitLoginFlow() async {
+        await Task.yield()
+        await Task.yield()
     }
 
     // MARK: - Initial State Tests
@@ -50,24 +61,29 @@ final class LoginViewModelTests: XCTestCase {
 
     // MARK: - Login Success Tests
 
-    func testLogin_withValidCredentials_callsDelegate() {
+    func testLogin_withValidCredentials_callsDelegate() async {
         // Given
         let delegate = MockLoginViewModelDelegate()
         sut.delegate = delegate
         sut.username = "testuser"
         sut.password = "password123"
         validateCredentials.resultToReturn = .success(())
+        let expectation = expectation(description: "Delegate called")
+        delegate.onSuccess = {
+            expectation.fulfill()
+        }
 
         // When
         sut.login()
 
         // Then
+        await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertTrue(delegate.didCallSuccess)
         XCTAssertEqual(delegate.successUsername, "testuser")
         XCTAssertNil(sut.errorMessage)
     }
 
-    func testLogin_withValidCredentials_clearsErrorMessage() {
+    func testLogin_withValidCredentials_clearsErrorMessage() async {
         // Given
         sut.username = "testuser"
         sut.password = "password123"
@@ -76,14 +92,32 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
         XCTAssertNil(sut.errorMessage)
     }
 
+    func testLogin_withValidCredentials_savesSession() async {
+        // Given
+        sut.username = "testuser"
+        sut.password = "password123"
+        validateCredentials.resultToReturn = .success(())
+
+        // When
+        sut.login()
+        await awaitLoginFlow()
+
+        // Then
+        XCTAssertEqual(sessionRepository.saveSessionCallCount, 1)
+        XCTAssertEqual(sessionRepository.savedSession?.userId, "testuser")
+        XCTAssertNotNil(sessionRepository.savedSession?.accessToken)
+        XCTAssertTrue((sessionRepository.savedSession?.isValid) == true)
+    }
+
     // MARK: - Login Failure Tests
 
-    func testLogin_withMissingUsername_setsErrorMessage() {
+    func testLogin_withMissingUsername_setsErrorMessage() async {
         // Given
         sut.username = ""
         sut.password = "password123"
@@ -91,12 +125,13 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
         XCTAssertEqual(sut.errorMessage, "Please enter a username")
     }
 
-    func testLogin_withShortUsername_setsErrorMessage() {
+    func testLogin_withShortUsername_setsErrorMessage() async {
         // Given
         sut.username = "ab"
         sut.password = "password123"
@@ -104,12 +139,13 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
         XCTAssertEqual(sut.errorMessage, "Username must be at least 3 characters")
     }
 
-    func testLogin_withMissingPassword_setsErrorMessage() {
+    func testLogin_withMissingPassword_setsErrorMessage() async {
         // Given
         sut.username = "testuser"
         sut.password = ""
@@ -117,12 +153,13 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
         XCTAssertEqual(sut.errorMessage, "Please enter a password")
     }
 
-    func testLogin_withShortPassword_setsErrorMessage() {
+    func testLogin_withShortPassword_setsErrorMessage() async {
         // Given
         sut.username = "testuser"
         sut.password = "pass1"
@@ -130,12 +167,13 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
         XCTAssertEqual(sut.errorMessage, "Password must be at least 6 characters")
     }
 
-    func testLogin_withValidationError_doesNotCallDelegate() {
+    func testLogin_withValidationError_doesNotCallDelegate() async {
         // Given
         let delegate = MockLoginViewModelDelegate()
         sut.delegate = delegate
@@ -145,8 +183,28 @@ final class LoginViewModelTests: XCTestCase {
 
         // When
         sut.login()
+        await awaitLoginFlow()
 
         // Then
+        XCTAssertFalse(delegate.didCallSuccess)
+    }
+
+    func testLogin_whenSessionSaveFails_setsErrorAndDoesNotCallDelegate() async {
+        // Given
+        let delegate = MockLoginViewModelDelegate()
+        sut.delegate = delegate
+        sut.username = "testuser"
+        sut.password = "password123"
+        validateCredentials.resultToReturn = .success(())
+        sessionRepository.saveError = SessionError.failed
+
+        // When
+        sut.login()
+        await awaitLoginFlow()
+
+        // Then
+        XCTAssertEqual(sessionRepository.saveSessionCallCount, 1)
+        XCTAssertEqual(sut.errorMessage, "Failed to persist your session. Please try again.")
         XCTAssertFalse(delegate.didCallSuccess)
     }
 
@@ -165,7 +223,7 @@ final class LoginViewModelTests: XCTestCase {
 
     // MARK: - Combine Publisher Tests
 
-    func testErrorMessagePublisher_publishesChanges() {
+    func testErrorMessagePublisher_publishesChanges() async {
         // Given
         let expectation = expectation(description: "Error message published")
         var receivedMessage: String?
@@ -184,9 +242,10 @@ final class LoginViewModelTests: XCTestCase {
         sut.password = "password123"
         validateCredentials.resultToReturn = .failure(.missingUsername)
         sut.login()
+        await awaitLoginFlow()
 
         // Then
-        wait(for: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertEqual(receivedMessage, "Please enter a username")
     }
 
@@ -227,14 +286,42 @@ private class MockValidateCredentialsUseCase: ValidateCredentialsUseCase {
     }
 }
 
+private enum SessionError: Error {
+    case failed
+}
+
+private final class MockSessionRepository: SessionRepository {
+    private(set) var saveSessionCallCount = 0
+    private(set) var savedSession: UserSession?
+    var saveError: Error?
+
+    func getCurrentSession() async throws -> UserSession? {
+        savedSession
+    }
+
+    func saveSession(_ session: UserSession) async throws {
+        saveSessionCallCount += 1
+        if let saveError {
+            throw saveError
+        }
+        savedSession = session
+    }
+
+    func clearSession() async throws {
+        savedSession = nil
+    }
+}
+
 // MARK: - Mock LoginViewModelDelegate
 
 private class MockLoginViewModelDelegate: LoginViewModelDelegate {
     var didCallSuccess = false
     var successUsername: String?
+    var onSuccess: (() -> Void)?
 
     func loginViewModelDidSucceed(_ viewModel: LoginViewModel, username: String) {
         didCallSuccess = true
         successUsername = username
+        onSuccess?()
     }
 }

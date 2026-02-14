@@ -64,15 +64,84 @@ class LoginViewController: UIViewController {
         return button
     }()
 
-    private lazy var errorLabel: UILabel = {
-        let label = UILabel()
-        label.textColor = .systemRed
-        label.font = .systemFont(ofSize: 14, weight: .regular)
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.isHidden = true
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    private let loginActivityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = .white
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+
+    private lazy var errorBannerView: ErrorBannerView = {
+        let view = ErrorBannerView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    private lazy var forgotPasswordButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Forgot Password?", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        button.setTitleColor(.systemBlue, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(forgotPasswordTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var signUpButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Sign Up", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        button.setTitleColor(.systemBlue, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(signUpTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var biometricLoginButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Use Face ID / Touch ID", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        button.setTitleColor(.systemBlue, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(biometricLoginTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var appleLoginButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Continue with Apple", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .black
+        button.layer.cornerRadius = 8
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(appleLoginTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var googleLoginButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Continue with Google", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        button.setTitleColor(.black, for: .normal)
+        button.backgroundColor = .systemGray6
+        button.layer.cornerRadius = 8
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(googleLoginTapped), for: .touchUpInside)
+        return button
+    }()
+
+    private lazy var socialLoginStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [
+            appleLoginButton,
+            googleLoginButton
+        ])
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     private lazy var contentStackView: UIStackView = {
@@ -80,11 +149,15 @@ class LoginViewController: UIViewController {
             titleLabel,
             usernameTextField,
             passwordTextField,
-            errorLabel,
-            loginButton
+            loginButton,
+            errorBannerView,
+            forgotPasswordButton,
+            signUpButton,
+            biometricLoginButton,
+            socialLoginStackView
         ])
         stack.axis = .vertical
-        stack.spacing = 20
+        stack.spacing = 16
         stack.alignment = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
@@ -118,6 +191,11 @@ class LoginViewController: UIViewController {
 
         // Add stack view to view
         view.addSubview(contentStackView)
+        loginButton.addSubview(loginActivityIndicator)
+
+        errorBannerView.onRetry = { [weak self] in
+            self?.loginButtonTapped()
+        }
 
         // Layout constraints
         NSLayoutConstraint.activate([
@@ -127,11 +205,19 @@ class LoginViewController: UIViewController {
 
             // Button height
             loginButton.heightAnchor.constraint(equalToConstant: 50),
+            appleLoginButton.heightAnchor.constraint(equalToConstant: 44),
+            googleLoginButton.heightAnchor.constraint(equalToConstant: 44),
 
             // Text field heights
             usernameTextField.heightAnchor.constraint(equalToConstant: 44),
-            passwordTextField.heightAnchor.constraint(equalToConstant: 44)
+            passwordTextField.heightAnchor.constraint(equalToConstant: 44),
+
+            loginActivityIndicator.centerXAnchor.constraint(equalTo: loginButton.centerXAnchor),
+            loginActivityIndicator.centerYAnchor.constraint(equalTo: loginButton.centerYAnchor)
         ])
+
+        contentStackView.setCustomSpacing(12, after: loginButton)
+        contentStackView.setCustomSpacing(8, after: errorBannerView)
     }
 
     private func setupAccessibility() {
@@ -147,7 +233,22 @@ class LoginViewController: UIViewController {
         loginButton.accessibilityLabel = "Login"
         loginButton.accessibilityHint = "Double tap to log in"
 
-        errorLabel.accessibilityLabel = "Error message"
+        errorBannerView.accessibilityLabel = "Error message"
+
+        forgotPasswordButton.accessibilityLabel = "Forgot password"
+        forgotPasswordButton.accessibilityHint = "Start password recovery"
+
+        signUpButton.accessibilityLabel = "Sign up"
+        signUpButton.accessibilityHint = "Create a new account"
+
+        biometricLoginButton.accessibilityLabel = "Biometric login"
+        biometricLoginButton.accessibilityHint = "Use Face ID or Touch ID to log in"
+
+        appleLoginButton.accessibilityLabel = "Continue with Apple"
+        appleLoginButton.accessibilityHint = "Log in with your Apple account"
+
+        googleLoginButton.accessibilityLabel = "Continue with Google"
+        googleLoginButton.accessibilityHint = "Log in with your Google account"
     }
 
     private func setupBindings() {
@@ -161,8 +262,15 @@ class LoginViewController: UIViewController {
                 if let errorMessage = errorMessage {
                     self?.showError(errorMessage)
                 } else {
-                    self?.errorLabel.isHidden = true
+                    self?.errorBannerView.hide()
                 }
+            }
+            .store(in: &cancellables)
+
+        viewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                self?.updateLoadingState(isLoading)
             }
             .store(in: &cancellables)
     }
@@ -179,17 +287,30 @@ class LoginViewController: UIViewController {
     }
 
     private func showError(_ message: String) {
-        errorLabel.text = message
-        errorLabel.isHidden = false
+        errorBannerView.show(message: message, canRetry: true)
 
         // Announce to VoiceOver
         UIAccessibility.post(notification: .announcement, argument: message)
+    }
 
-        // Animate error
-        errorLabel.alpha = 0
-        UIView.animate(withDuration: 0.3) {
-            self.errorLabel.alpha = 1
+    private func updateLoadingState(_ isLoading: Bool) {
+        if isLoading {
+            loginButton.setTitle("", for: .normal)
+            loginActivityIndicator.startAnimating()
+        } else {
+            loginButton.setTitle("Login", for: .normal)
+            loginActivityIndicator.stopAnimating()
         }
+
+        loginButton.isEnabled = !isLoading
+        usernameTextField.isEnabled = !isLoading
+        passwordTextField.isEnabled = !isLoading
+        forgotPasswordButton.isEnabled = !isLoading
+        signUpButton.isEnabled = !isLoading
+        biometricLoginButton.isEnabled = !isLoading
+        socialLoginStackView.isUserInteractionEnabled = !isLoading
+
+        loginButton.accessibilityValue = isLoading ? "Loading" : nil
     }
 }
 
@@ -213,5 +334,29 @@ extension LoginViewController: UITextFieldDelegate {
             loginButtonTapped()
         }
         return true
+    }
+}
+
+// MARK: - Placeholder Actions
+
+extension LoginViewController {
+    @objc private func forgotPasswordTapped() {
+        UIAccessibility.post(notification: .announcement, argument: "Forgot password selected")
+    }
+
+    @objc private func signUpTapped() {
+        UIAccessibility.post(notification: .announcement, argument: "Sign up selected")
+    }
+
+    @objc private func biometricLoginTapped() {
+        UIAccessibility.post(notification: .announcement, argument: "Biometric login selected")
+    }
+
+    @objc private func appleLoginTapped() {
+        UIAccessibility.post(notification: .announcement, argument: "Continue with Apple selected")
+    }
+
+    @objc private func googleLoginTapped() {
+        UIAccessibility.post(notification: .announcement, argument: "Continue with Google selected")
     }
 }

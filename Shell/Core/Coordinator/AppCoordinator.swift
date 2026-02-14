@@ -215,11 +215,11 @@ private extension AppCoordinator {
         // Remove any existing child coordinators
         removeAllChildCoordinators()
 
-        // Create and start ItemsCoordinator via DI container
-        let itemsCoordinator = dependencyContainer.makeItemsCoordinator(navigationController: navigationController)
-        itemsCoordinator.delegate = self
-        addChild(itemsCoordinator)
-        itemsCoordinator.start()
+        // Create and start DogCoordinator via DI container
+        let dogCoordinator = dependencyContainer.makeDogCoordinator(navigationController: navigationController)
+        dogCoordinator.delegate = self
+        addChild(dogCoordinator)
+        dogCoordinator.start()
     }
 
     @MainActor
@@ -347,6 +347,31 @@ extension AppCoordinator: ItemsCoordinatorDelegate {
             }
 
             showProfile(userID: userID)
+        }
+    }
+}
+
+// MARK: - DogCoordinatorDelegate
+
+extension AppCoordinator: DogCoordinatorDelegate {
+    func dogCoordinatorDidRequestLogout(_ coordinator: DogCoordinator) {
+        logger.info("Logout requested from Dog feature", category: "coordinator")
+
+        Task {
+            // Clear the session
+            let sessionRepository = dependencyContainer.makeSessionRepository()
+            do {
+                try await sessionRepository.clearSession()
+                logger.info("Session cleared successfully", category: "coordinator")
+            } catch {
+                logger.error("Failed to clear session", category: "coordinator", context: ["error": "\(error)"])
+            }
+
+            // Navigate to unauthenticated state
+            await MainActor.run {
+                clearPendingRoute()
+                route(to: .unauthenticated)
+            }
         }
     }
 }

@@ -35,7 +35,16 @@
       "Bash(swift test:*)",
       "Bash(swift:*)",
       "Bash(git stash:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "WebSearch",
+      "WebFetch(domain:www.swift.org)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(open:*)",
+      "Skill(/architecture-check)",
+      "Skill(/code-quality-check)",
+      "Bash(find:*)"
     ]
   }
 }

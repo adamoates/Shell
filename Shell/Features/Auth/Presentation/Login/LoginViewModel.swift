@@ -39,7 +39,9 @@ final class LoginViewModel: ObservableObject {
     weak var delegate: LoginViewModelDelegate?
 
     private let validateCredentials: ValidateCredentialsUseCase
+    private let sessionRepository: SessionRepository
     private var cancellables = Set<AnyCancellable>()
+    private let sessionDuration: TimeInterval = 60 * 60 * 24 // 24 hours
 
     // MARK: - Rate Limiting Properties
 
@@ -49,14 +51,25 @@ final class LoginViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(validateCredentials: ValidateCredentialsUseCase) {
+    init(
+        validateCredentials: ValidateCredentialsUseCase,
+        sessionRepository: SessionRepository
+    ) {
         self.validateCredentials = validateCredentials
+        self.sessionRepository = sessionRepository
     }
 
     // MARK: - Actions
 
     /// Attempt to log in with current credentials
     func login() {
+        Task { [weak self] in
+            await self?.performLogin()
+        }
+    }
+
+    /// Perform login and persist session if credentials are valid
+    private func performLogin() async {
         // Check if account is locked out
         if let lockout = lockoutUntil, Date() < lockout {
             let remainingSeconds = Int(lockout.timeIntervalSinceNow)
@@ -86,14 +99,23 @@ final class LoginViewModel: ObservableObject {
         // Validate credentials
         let result = validateCredentials.execute(credentials: credentials)
 
-        isLoading = false
-
         switch result {
         case .success:
-            // Validation succeeded - reset rate limiting and notify delegate
-            failedAttempts = 0
-            lockoutUntil = nil
-            delegate?.loginViewModelDidSucceed(self, username: username)
+            // Persist authenticated session before reporting login success.
+            let session = UserSession(
+                userId: username,
+                accessToken: UUID().uuidString,
+                expiresAt: Date().addingTimeInterval(sessionDuration)
+            )
+
+            do {
+                try await sessionRepository.saveSession(session)
+                failedAttempts = 0
+                lockoutUntil = nil
+                delegate?.loginViewModelDidSucceed(self, username: username)
+            } catch {
+                errorMessage = "Failed to persist your session. Please try again."
+            }
 
         case .failure(let error):
             // Validation failed - increment counter and apply exponential backoff
@@ -112,6 +134,8 @@ final class LoginViewModel: ObservableObject {
                 errorMessage = error.userMessage
             }
         }
+
+        isLoading = false
     }
 
     /// Clear error message
