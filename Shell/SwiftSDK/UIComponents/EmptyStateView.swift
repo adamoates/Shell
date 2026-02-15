@@ -10,7 +10,6 @@ import UIKit
 /// Reusable empty state view for displaying when no content is available
 /// Shows a centered message with optional image
 final class EmptyStateView: UIView {
-
     // MARK: - Properties
 
     /// Message to display in the empty state

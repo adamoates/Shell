@@ -11,7 +11,6 @@ import Combine
 
 @MainActor
 final class LoginViewModelTests: XCTestCase {
-
     private var sut: LoginViewModel!
     private var validateCredentials: MockValidateCredentialsUseCase!
     private var loginUseCase: MockLoginUseCase!

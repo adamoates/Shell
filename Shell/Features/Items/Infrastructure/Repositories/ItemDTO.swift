@@ -48,12 +48,6 @@ struct ItemRequestDTO: Codable, Sendable {
     let description: String
     let isCompleted: Bool
 
-    init(name: String, description: String, isCompleted: Bool) {
-        self.name = name
-        self.description = description
-        self.isCompleted = isCompleted
-    }
-
     /// Create request DTO from domain Item
     static func fromDomain(_ item: Item) -> ItemRequestDTO {
         ItemRequestDTO(

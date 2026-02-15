@@ -18,7 +18,6 @@ protocol CreateItemUseCase {
 }
 
 final class DefaultCreateItemUseCase: CreateItemUseCase {
-
     // MARK: - Properties
 
     private let repository: ItemsRepository

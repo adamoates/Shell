@@ -11,7 +11,6 @@ import XCTest
 /// Tests for Coordinator protocol and base implementation
 /// Following TDD: These tests are written FIRST, before implementation
 final class CoordinatorTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     private class MockChildCoordinator: Coordinator {
@@ -107,7 +106,7 @@ final class CoordinatorTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(sut.childCoordinators.count, 1)
-        XCTAssertTrue(sut.childCoordinators.contains(where: { $0 === child }))
+        XCTAssertTrue(sut.childCoordinators.contains { $0 === child })
         XCTAssertTrue(child.parentCoordinator === sut)
     }
 

@@ -10,7 +10,6 @@ import XCTest
 
 @MainActor
 final class HTTPItemsRepositoryTests: XCTestCase {
-
     var repository: HTTPItemsRepository!
     var mockURLSession: URLSession!
 

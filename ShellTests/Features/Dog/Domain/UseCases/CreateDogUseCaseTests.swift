@@ -157,7 +157,7 @@ final class CreateDogUseCaseTests: XCTestCase {
 }
 
 // MARK: - Mock Repository
-fileprivate actor MockDogRepository: DogRepository {
+private actor MockDogRepository: DogRepository {
     var createCallCount = 0
     private var shouldThrowError = false
     private var dogs: [UUID: Dog] = [:]

@@ -11,7 +11,6 @@ import XCTest
 /// Tests for RestoreSessionUseCase
 /// Following TDD with test doubles
 final class RestoreSessionUseCaseTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     /// Fake SessionRepository - returns stubbed data

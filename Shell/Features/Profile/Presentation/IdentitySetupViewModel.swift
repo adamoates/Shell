@@ -106,4 +106,3 @@ final class IdentitySetupViewModel: ObservableObject {
         return await completeSetup()
     }
 }
-

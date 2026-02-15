@@ -10,14 +10,17 @@ import UIKit
 import Combine
 
 class ListViewController: UIViewController {
-
     // MARK: - Properties
 
     weak var delegate: ListViewControllerDelegate?
     private let username: String?
     private let viewModel: ListViewModel
     private var cancellables = Set<AnyCancellable>()
-    private var refreshControl: UIRefreshControl!
+    private lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        return control
+    }()
     private var networkMonitor: NetworkMonitor?
 
     // MARK: - UI Components
@@ -135,9 +138,7 @@ class ListViewController: UIViewController {
     }
 
     private func setupTableView() {
-        // Setup refresh control
-        refreshControl = UIRefreshControl()
-        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        // Setup refresh control (initialized lazily)
         tableView.refreshControl = refreshControl
     }
 

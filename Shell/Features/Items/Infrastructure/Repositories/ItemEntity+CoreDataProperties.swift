@@ -9,7 +9,7 @@ import CoreData
 import Foundation
 
 extension ItemEntity {
-    @nonobjc public nonisolated class func fetchRequest() -> NSFetchRequest<ItemEntity> {
+    @nonobjc nonisolated public class func fetchRequest() -> NSFetchRequest<ItemEntity> {
         return NSFetchRequest<ItemEntity>(entityName: "ItemEntity")
     }
 

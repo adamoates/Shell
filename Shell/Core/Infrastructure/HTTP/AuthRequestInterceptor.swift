@@ -98,7 +98,6 @@ actor AuthRequestInterceptor: RequestInterceptor {
                 try await sessionRepository.saveSession(newSession)
 
                 return newSession
-
             } catch {
                 // Refresh failed - clear session and force re-login
                 try? await sessionRepository.clearSession()

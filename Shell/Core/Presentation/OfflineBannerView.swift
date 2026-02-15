@@ -10,7 +10,6 @@ import UIKit
 /// Banner view that shows when device is offline
 /// Provides clear feedback to users about network status
 final class OfflineBannerView: UIView {
-
     // MARK: - UI Components
 
     private lazy var containerView: UIView = {

@@ -19,7 +19,6 @@ import XCTest
 /// Note: Placeholder tests removed due to .claude Skills bundling issues.
 /// Real UI tests should verify actual user interactions and app behavior.
 final class ShellUITests: XCTestCase {
-
     override func setUpWithError() throws {
         continueAfterFailure = false
     }

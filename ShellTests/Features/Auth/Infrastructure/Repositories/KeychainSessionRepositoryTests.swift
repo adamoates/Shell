@@ -10,7 +10,6 @@ import XCTest
 
 @MainActor
 final class KeychainSessionRepositoryTests: XCTestCase {
-
     var repository: KeychainSessionRepository!
 
     override func setUp() async throws {

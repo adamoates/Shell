@@ -12,7 +12,6 @@ import XCTest
 ///
 /// Following TDD: These tests define the expected behavior
 final class CreateItemUseCaseTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     private actor MockItemsRepository: ItemsRepository {

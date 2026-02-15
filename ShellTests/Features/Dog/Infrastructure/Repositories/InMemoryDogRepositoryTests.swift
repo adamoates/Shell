@@ -49,8 +49,8 @@ final class InMemoryDogRepositoryTests: XCTestCase {
 
         // Assert
         XCTAssertEqual(dogs.count, 2)
-        XCTAssertTrue(dogs.contains(where: { $0.id == dog1.id }))
-        XCTAssertTrue(dogs.contains(where: { $0.id == dog2.id }))
+        XCTAssertTrue(dogs.contains { $0.id == dog1.id })
+        XCTAssertTrue(dogs.contains { $0.id == dog2.id })
     }
 
     func testFetchAllReturnsEmptyArrayWhenNoDogs() async throws {

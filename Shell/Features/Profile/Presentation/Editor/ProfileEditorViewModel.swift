@@ -19,7 +19,7 @@ final class ProfileEditorViewModel: ObservableObject {
     // MARK: - Published Properties
 
     @Published var screenName: String = ""
-    @Published var birthday: Date = Date()
+    @Published var birthday = Date()
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
     @Published var isSaveEnabled: Bool = false
@@ -54,7 +54,7 @@ final class ProfileEditorViewModel: ObservableObject {
     private func setupValidation() {
         // Combine screenName and birthday publishers to enable/disable save
         Publishers.CombineLatest($screenName, $birthday)
-            .map { screenName, birthday in
+            .map { screenName, _ in
                 // Enable save if basic validation passes
                 !screenName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }

@@ -14,7 +14,6 @@ import Combine
 /// Covers both create and edit modes
 @MainActor
 final class ItemEditorViewModelTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     private final class MockCreateItemUseCase: CreateItemUseCase {

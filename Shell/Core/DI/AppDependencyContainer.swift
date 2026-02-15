@@ -79,7 +79,7 @@ final class AppDependencyContainer {
 
     /// Shared network monitor (singleton pattern)
     /// Network connectivity state must be shared across the app
-    private lazy var sharedNetworkMonitor: NetworkMonitor = NetworkMonitor()
+    private lazy var sharedNetworkMonitor = NetworkMonitor()
 
     /// Shared dog repository (singleton pattern)
     /// Dog data must be shared across the app
@@ -91,7 +91,7 @@ final class AppDependencyContainer {
     private lazy var sharedCoreDataStack: CoreDataStack = {
         // Create Core Data stack asynchronously with synchronous bridge
         // This blocks during initialization, which is acceptable for DI container setup
-        var stack: CoreDataStack!
+        var stack: CoreDataStack?
         let semaphore = DispatchSemaphore(value: 0)
 
         Task {
@@ -107,17 +107,24 @@ final class AppDependencyContainer {
                 Task { @MainActor in
                     logger.error("Failed to load Core Data persistent store, using in-memory fallback: \(error.localizedDescription)")
                 }
-                stack = try! await CoreDataStack(
-                    modelName: "Shell",
-                    inMemory: true,
-                    logger: logger
-                )
+                do {
+                    stack = try await CoreDataStack(
+                        modelName: "Shell",
+                        inMemory: true,
+                        logger: logger
+                    )
+                } catch {
+                    preconditionFailure("Failed to initialize Core Data stack (even in-memory fallback failed): \(error)")
+                }
             }
             semaphore.signal()
         }
 
         semaphore.wait()
-        return stack
+        guard let finalStack = stack else {
+            preconditionFailure("Core Data stack was not initialized")
+        }
+        return finalStack
     }()
 
     // MARK: - Auth Infrastructure

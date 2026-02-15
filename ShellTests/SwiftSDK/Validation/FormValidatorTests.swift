@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class FormValidatorTests: XCTestCase {
-
     @MainActor
     func testFormValidWhenAllFieldsValid() async throws {
         let formValidator = FormValidator()

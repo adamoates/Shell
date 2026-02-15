@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class StringLengthValidatorTests: XCTestCase {
-
     func testValidString() {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
 
@@ -69,7 +68,6 @@ final class StringLengthValidatorTests: XCTestCase {
 }
 
 final class RegexValidatorTests: XCTestCase {
-
     func testEmailPattern() {
         let validator = RegexValidator(pattern: "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", options: .caseInsensitive)
 
@@ -92,7 +90,6 @@ final class RegexValidatorTests: XCTestCase {
 }
 
 final class CharacterSetValidatorTests: XCTestCase {
-
     func testAlphanumericOnly() {
         let validator = CharacterSetValidator(allowedCharacters: .alphanumerics)
 
@@ -116,7 +113,6 @@ final class CharacterSetValidatorTests: XCTestCase {
 }
 
 final class RangeValidatorTests: XCTestCase {
-
     func testIntegerRange() {
         let validator = RangeValidator(minimum: 0, maximum: 100)
 
@@ -167,7 +163,6 @@ final class RangeValidatorTests: XCTestCase {
 }
 
 final class DateAgeValidatorTests: XCTestCase {
-
     func testValidAge() {
         let validator = DateAgeValidator(minimumAge: 18, maximumAge: 120)
 
@@ -222,7 +217,6 @@ final class DateAgeValidatorTests: XCTestCase {
 }
 
 final class ComposedValidatorTests: XCTestCase {
-
     func testValidatorComposition() {
         // Create composed validator: length AND alphanumeric
         let lengthValidator = StringLengthValidator(minimum: 3, maximum: 20)

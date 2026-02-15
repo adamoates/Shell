@@ -10,7 +10,6 @@ import UIKit
 import Combine
 
 class LoginViewController: UIViewController {
-
     // MARK: - Properties
 
     weak var delegate: LoginViewControllerDelegate?
@@ -358,10 +357,11 @@ extension LoginViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
 
         alert.addAction(UIAlertAction(title: "Send Link", style: .default) { [weak self, weak alert] _ in
-            guard let email = alert?.textFields?.first?.text, !email.isEmpty else {
+            guard let self = self,
+                  let email = alert?.textFields?.first?.text, !email.isEmpty else {
                 return
             }
-            self?.delegate?.loginViewController(self!, didRequestPasswordResetFor: email)
+            self.delegate?.loginViewController(self, didRequestPasswordResetFor: email)
         })
 
         present(alert, animated: true)

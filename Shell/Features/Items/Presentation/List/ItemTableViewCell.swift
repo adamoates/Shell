@@ -10,7 +10,6 @@ import UIKit
 /// Table view cell for displaying an Item in a list
 /// Uses modern UIListContentConfiguration for accessibility and dynamic type support
 final class ItemTableViewCell: UITableViewCell {
-
     // MARK: - Properties
 
     static let reuseIdentifier = "ItemTableViewCell"

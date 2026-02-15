@@ -19,7 +19,6 @@ protocol UpdateItemUseCase {
 }
 
 final class DefaultUpdateItemUseCase: UpdateItemUseCase {
-
     // MARK: - Properties
 
     private let repository: ItemsRepository

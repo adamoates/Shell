@@ -16,20 +16,4 @@ struct Item: Equatable, Identifiable, Sendable, Codable {
     let isCompleted: Bool
     let createdAt: Date
     let updatedAt: Date
-
-    init(
-        id: String,
-        name: String,
-        description: String,
-        isCompleted: Bool,
-        createdAt: Date,
-        updatedAt: Date
-    ) {
-        self.id = id
-        self.name = name
-        self.description = description
-        self.isCompleted = isCompleted
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
 }

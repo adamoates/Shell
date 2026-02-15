@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class ObserverTests: XCTestCase {
-
     // MARK: - Basic Observer Tests
 
     func testAddObserverAndNotify() async {

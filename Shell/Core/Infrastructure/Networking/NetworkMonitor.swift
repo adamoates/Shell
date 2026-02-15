@@ -11,7 +11,6 @@ import Network
 /// Monitors network connectivity status
 /// Uses NWPathMonitor for real-time network status updates
 actor NetworkMonitor {
-
     // MARK: - Properties
 
     private let monitor = NWPathMonitor()

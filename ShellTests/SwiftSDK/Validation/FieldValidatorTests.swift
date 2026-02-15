@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class FieldValidatorTests: XCTestCase {
-
     @MainActor
     func testInitialState() async throws {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
@@ -85,11 +84,10 @@ final class FieldValidatorTests: XCTestCase {
         let validator = StringLengthValidator(minimum: 2, maximum: 10)
         let field = FieldValidator(
             initialValue: "",
-            validator: validator,
-            errorMapper: { error in
+            validator: validator
+        )            { _ in
                 return "Custom error message"
             }
-        )
 
         field.value = "h" // Too short
 

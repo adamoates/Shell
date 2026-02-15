@@ -16,11 +16,20 @@ struct AppConfig: Equatable {
     var apiBaseURL: URL {
         switch environment {
         case .development:
-            return URL(string: "https://api-dev.shell.com")!
+            guard let url = URL(string: "https://api-dev.shell.com") else {
+                preconditionFailure("Invalid development API URL")
+            }
+            return url
         case .staging:
-            return URL(string: "https://api-staging.shell.com")!
+            guard let url = URL(string: "https://api-staging.shell.com") else {
+                preconditionFailure("Invalid staging API URL")
+            }
+            return url
         case .production:
-            return URL(string: "https://api.shell.com")!
+            guard let url = URL(string: "https://api.shell.com") else {
+                preconditionFailure("Invalid production API URL")
+            }
+            return url
         }
     }
 

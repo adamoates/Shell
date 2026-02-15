@@ -9,7 +9,6 @@ import UIKit
 
 /// Extension to add offline monitoring capabilities to any ViewController
 extension UIViewController {
-
     /// Add offline monitoring banner to the view controller
     /// - Parameter networkMonitor: The network monitor to observe
     /// - Returns: The offline banner view for customization

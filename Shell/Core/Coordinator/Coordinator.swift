@@ -54,7 +54,7 @@ extension Coordinator {
     /// Remove a child coordinator
     /// - Parameter child: The child coordinator to remove
     func removeChild(_ child: Coordinator) {
-        childCoordinators.removeAll(where: { $0 === child })
+        childCoordinators.removeAll { $0 === child }
         child.parentCoordinator = nil
     }
 

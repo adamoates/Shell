@@ -11,7 +11,6 @@ import Combine
 
 @MainActor
 final class ProfileEditorViewModelTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     class MockDelegate: ProfileEditorViewModelDelegate {

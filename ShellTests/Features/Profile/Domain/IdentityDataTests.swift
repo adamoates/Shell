@@ -10,7 +10,6 @@ import XCTest
 
 /// Tests for IdentityData domain model and validation
 final class IdentityDataTests: XCTestCase {
-
     // MARK: - Screen Name Validation Tests
 
     func testValidateScreenName_validName_succeeds() {

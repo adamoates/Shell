@@ -18,11 +18,11 @@ final class RemoteUserProfileRepositoryTests: XCTestCase {
     // MARK: - Test Doubles
 
     private struct NoOpLogger: Logger {
-        func debug(_ message: String, category: String?, context: [String : String]?) {}
-        func info(_ message: String, category: String?, context: [String : String]?) {}
-        func warning(_ message: String, category: String?, context: [String : String]?) {}
-        func error(_ message: String, category: String?, context: [String : String]?) {}
-        func fault(_ message: String, category: String?, context: [String : String]?) {}
+        func debug(_ message: String, category: String?, context: [String: String]?) {}
+        func info(_ message: String, category: String?, context: [String: String]?) {}
+        func warning(_ message: String, category: String?, context: [String: String]?) {}
+        func error(_ message: String, category: String?, context: [String: String]?) {}
+        func fault(_ message: String, category: String?, context: [String: String]?) {}
     }
 
     override func setUp() {

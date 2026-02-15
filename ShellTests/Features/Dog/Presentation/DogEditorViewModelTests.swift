@@ -239,7 +239,7 @@ final class DogEditorViewModelTests: XCTestCase {
 }
 
 // MARK: - Mock Create Use Case
-fileprivate actor MockCreateDogUseCase: CreateDogUseCase {
+private actor MockCreateDogUseCase: CreateDogUseCase {
     var executeCallCount = 0
     private var shouldThrowError = false
     var lastNamePassed: String?
@@ -277,7 +277,7 @@ fileprivate actor MockCreateDogUseCase: CreateDogUseCase {
 }
 
 // MARK: - Mock Update Use Case
-fileprivate actor MockUpdateDogUseCase: UpdateDogUseCase {
+private actor MockUpdateDogUseCase: UpdateDogUseCase {
     var executeCallCount = 0
     private var shouldThrowError = false
     var lastDogPassed: Dog?
@@ -299,7 +299,7 @@ fileprivate actor MockUpdateDogUseCase: UpdateDogUseCase {
 }
 
 // MARK: - Mock Coordinator
-fileprivate final class MockDogEditorCoordinator: DogEditorCoordinatorDelegate {
+private final class MockDogEditorCoordinator: DogEditorCoordinatorDelegate {
     var didSaveDogCallCount = 0
     var didCancelEditingCallCount = 0
 

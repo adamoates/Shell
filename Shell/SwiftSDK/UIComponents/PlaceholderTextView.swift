@@ -10,7 +10,6 @@ import UIKit
 /// UITextView with built-in placeholder text support
 /// Automatically shows/hides placeholder text when editing
 final class PlaceholderTextView: UITextView {
-
     // MARK: - Properties
 
     /// Placeholder text to display when the text view is empty
@@ -28,6 +27,8 @@ final class PlaceholderTextView: UITextView {
     }
 
     /// Override text to handle placeholder visibility
+    /// Note: Implicitly unwrapped optional is required by UIKit's UITextView API
+    // swiftlint:disable:next implicitly_unwrapped_optional
     override var text: String! {
         didSet {
             updatePlaceholder()

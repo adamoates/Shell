@@ -11,7 +11,6 @@ import Combine
 
 @MainActor
 final class ListViewModelTests: XCTestCase {
-
     private var sut: ListViewModel!
     private var fetchItems: MockFetchItemsUseCase!
     private var cancellables: Set<AnyCancellable>!
@@ -181,7 +180,7 @@ final class ListViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.items.count, 4)
-        XCTAssertFalse(sut.items.contains(where: { $0.id == "3" }))
+        XCTAssertFalse(sut.items.contains { $0.id == "3" })
     }
 
     func testDeleteItem_withInvalidIndex_doesNotCrash() async {

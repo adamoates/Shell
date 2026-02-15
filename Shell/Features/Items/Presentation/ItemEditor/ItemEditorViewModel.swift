@@ -21,7 +21,6 @@ protocol ItemEditorViewModelDelegate: AnyObject {
 /// - Edit mode: itemToEdit contains existing item
 @MainActor
 final class ItemEditorViewModel: ObservableObject {
-
     // MARK: - Published Properties
 
     @Published var name: String = ""
@@ -114,12 +113,10 @@ final class ItemEditorViewModel: ObservableObject {
             // Success: notify delegate
             isSaving = false
             delegate?.itemEditorViewModel(self, didSaveItem: savedItem)
-
         } catch let error as ItemError {
             // Domain error: show user-friendly message
             isSaving = false
             errorMessage = error.localizedDescription
-
         } catch {
             // Unknown error
             isSaving = false

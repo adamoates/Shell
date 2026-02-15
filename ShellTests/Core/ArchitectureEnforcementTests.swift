@@ -14,7 +14,6 @@ import XCTest
 /// otherwise only be caught in code review. They fail fast if someone
 /// accidentally violates the rules documented in Docs/ArchitectureRules.md
 final class ArchitectureEnforcementTests: XCTestCase {
-
     // MARK: - Boot Placement Rules
 
     func testBootIsNotInFeatures() {

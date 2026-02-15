@@ -18,7 +18,6 @@ protocol DeleteItemUseCase {
 }
 
 final class DefaultDeleteItemUseCase: DeleteItemUseCase {
-
     // MARK: - Properties
 
     private let repository: ItemsRepository

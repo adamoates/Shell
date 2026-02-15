@@ -11,7 +11,6 @@ import Combine
 /// View controller for creating or editing an item
 /// Displays form with name, description, and completion status fields
 final class ItemEditorViewController: UIViewController {
-
     // MARK: - Properties
 
     private let viewModel: ItemEditorViewModel
@@ -324,7 +323,6 @@ final class ItemEditorViewController: UIViewController {
             descriptionTextView.isEditable = true
         }
     }
-
 }
 
 // MARK: - UITextFieldDelegate

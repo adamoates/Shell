@@ -9,7 +9,7 @@ import CoreData
 import Foundation
 
 extension UserProfileEntity {
-    @nonobjc public nonisolated class func fetchRequest() -> NSFetchRequest<UserProfileEntity> {
+    @nonobjc nonisolated public class func fetchRequest() -> NSFetchRequest<UserProfileEntity> {
         return NSFetchRequest<UserProfileEntity>(entityName: "UserProfileEntity")
     }
 

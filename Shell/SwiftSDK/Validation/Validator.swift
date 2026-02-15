@@ -118,7 +118,6 @@ extension Validator {
 /// - Short-circuit evaluation (fails on first error)
 struct ComposedValidator<First: Validator, Second: Validator>: Validator
 where First.Value == Second.Value, First.ValidationError == Second.ValidationError {
-
     typealias Value = First.Value
     typealias ValidationError = First.ValidationError
 

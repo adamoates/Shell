@@ -59,11 +59,10 @@ actor Observable<Event> {
 
         // Capture observer weakly to avoid retain cycle
         let weakObserver = WeakObserver(
-            observer: observer,
-            notify: { [weak observer] event in
+            observer: observer
+        )            { [weak observer] event in
                 await observer?.handleEvent(event)
             }
-        )
 
         observers[id] = weakObserver
 

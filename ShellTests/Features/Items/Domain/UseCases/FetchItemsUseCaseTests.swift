@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class FetchItemsUseCaseTests: XCTestCase {
-
     private var sut: FetchItemsUseCase!
     private var repository: MockItemsRepository!
 

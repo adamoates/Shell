@@ -9,7 +9,6 @@ import UIKit
 import Combine
 
 class ResetPasswordViewController: UIViewController {
-
     // MARK: - Properties
 
     weak var delegate: ResetPasswordViewControllerDelegate?

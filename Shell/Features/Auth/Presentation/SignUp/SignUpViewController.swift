@@ -9,7 +9,6 @@ import UIKit
 import Combine
 
 class SignUpViewController: UIViewController {
-
     // MARK: - Properties
 
     weak var delegate: SignUpViewControllerDelegate?

@@ -33,13 +33,4 @@ struct Credentials: Equatable {
     /// Password is stored temporarily in memory for authentication
     /// WARNING: Never log, persist, or store in long-lived state
     let password: String
-
-    /// Initialize credentials for immediate use in authentication
-    /// - Parameters:
-    ///   - username: User's username or email
-    ///   - password: User's password (will be held in memory temporarily)
-    init(username: String, password: String) {
-        self.username = username
-        self.password = password
-    }
 }

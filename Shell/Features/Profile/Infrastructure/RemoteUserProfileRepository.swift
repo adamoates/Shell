@@ -58,12 +58,10 @@ final class RemoteUserProfileRepository: UserProfileRepository {
 
             // Map to domain model
             return ProfileAPI.toDomain(profileResponse)
-
         } catch HTTPClientError.httpError(statusCode: 404, _) {
             // Profile not found - this is expected for new users
             logger.info("Profile not found", category: "repository", context: ["userID": userID])
             return nil
-
         } catch {
             logger.warning("Failed to fetch profile", category: "repository", context: ["userID": userID, "error": "\(error)"])
             return nil
@@ -102,7 +100,6 @@ final class RemoteUserProfileRepository: UserProfileRepository {
             // Perform HTTP request
             _ = try await httpClient.perform(request)
             logger.info("Profile saved", category: "repository", context: ["userID": profile.userID])
-
         } catch {
             logger.warning("Failed to save profile", category: "repository", context: ["userID": profile.userID, "error": "\(error)"])
         }
@@ -131,7 +128,6 @@ final class RemoteUserProfileRepository: UserProfileRepository {
             // Perform HTTP request
             _ = try await httpClient.perform(request)
             logger.info("Profile deleted", category: "repository", context: ["userID": userID])
-
         } catch {
             logger.warning("Failed to delete profile", category: "repository", context: ["userID": userID, "error": "\(error)"])
         }
@@ -165,7 +161,6 @@ final class RemoteUserProfileRepository: UserProfileRepository {
             let statusResponse = try decoder.decode(ProfileAPI.IdentityStatusResponse.self, from: response.data)
 
             return statusResponse.hasCompletedIdentitySetup
-
         } catch {
             logger.warning("Failed to fetch identity status", category: "repository", context: ["userID": userID, "error": "\(error)"])
             return false

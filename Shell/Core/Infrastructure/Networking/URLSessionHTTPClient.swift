@@ -15,9 +15,17 @@ import CryptoKit
 /// - TLS certificate validation
 /// - Protection against MITM attacks
 final class URLSessionHTTPClient: NSObject, HTTPClient {
-    private var session: URLSession!
+    private var session: URLSession?
     private let pinnedDomains: Set<String>
     private let trustedPublicKeyHashes: Set<String>
+
+    /// Safe accessor for session (guaranteed non-nil after init)
+    private var urlSession: URLSession {
+        guard let session = session else {
+            preconditionFailure("URLSession accessed before initialization")
+        }
+        return session
+    }
 
     /// Initialize with optional certificate pinning configuration
     /// - Parameters:
@@ -60,7 +68,7 @@ final class URLSessionHTTPClient: NSObject, HTTPClient {
 
         // Perform request
         do {
-            let (data, response) = try await session.data(for: urlRequest)
+            let (data, response) = try await urlSession.data(for: urlRequest)
 
             // Validate response
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -85,7 +93,6 @@ final class URLSessionHTTPClient: NSObject, HTTPClient {
                 data: data,
                 headers: headers
             )
-
         } catch let error as HTTPClientError {
             throw error
         } catch {

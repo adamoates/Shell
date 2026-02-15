@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class InMemoryStorageTests: XCTestCase {
-
     // MARK: - Basic Storage Tests
 
     func testStoreAndRetrieve() async throws {
@@ -131,7 +130,6 @@ final class InMemoryStorageTests: XCTestCase {
 }
 
 final class InMemoryCacheTests: XCTestCase {
-
     // MARK: - Basic Cache Tests
 
     func testCacheStoreAndRetrieve() async throws {

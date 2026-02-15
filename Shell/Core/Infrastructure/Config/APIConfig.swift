@@ -13,22 +13,28 @@ struct APIConfig {
     let authToken: String?
 
     /// Production configuration
-    static let production = APIConfig(
-        baseURL: URL(string: "https://api.shell.app/v1")!,
-        authToken: nil  // Token will be set after login
-    )
+    static let production: APIConfig = {
+        guard let url = URL(string: "https://api.shell.app/v1") else {
+            preconditionFailure("Invalid production API URL")
+        }
+        return APIConfig(baseURL: url, authToken: nil)
+    }()
 
     /// Staging configuration
-    static let staging = APIConfig(
-        baseURL: URL(string: "https://api.staging.shell.app/v1")!,
-        authToken: nil
-    )
+    static let staging: APIConfig = {
+        guard let url = URL(string: "https://api.staging.shell.app/v1") else {
+            preconditionFailure("Invalid staging API URL")
+        }
+        return APIConfig(baseURL: url, authToken: nil)
+    }()
 
     /// Local development configuration
-    static let local = APIConfig(
-        baseURL: URL(string: "http://localhost:3000/v1")!,
-        authToken: nil
-    )
+    static let local: APIConfig = {
+        guard let url = URL(string: "http://localhost:3000/v1") else {
+            preconditionFailure("Invalid local API URL")
+        }
+        return APIConfig(baseURL: url, authToken: nil)
+    }()
 
     /// Current active configuration
     /// Change this to switch between environments

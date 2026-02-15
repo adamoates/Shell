@@ -22,7 +22,6 @@ import XCTest
 /// - Rate limiting works
 @MainActor
 final class AuthIntegrationTests: XCTestCase {
-
     // MARK: - Properties
 
     var dependencyContainer: AppDependencyContainer!

@@ -9,7 +9,6 @@ import XCTest
 @testable import Shell
 
 final class ValidateCredentialsUseCaseTests: XCTestCase {
-
     private var sut: ValidateCredentialsUseCase!
 
     override func setUp() {

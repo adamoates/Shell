@@ -11,7 +11,6 @@ import XCTest
 /// Tests for RouteParameters implementations
 /// Verifies parameter validation logic
 final class RouteParametersTests: XCTestCase {
-
     // MARK: - ProfileParameters Tests
 
     func testProfileParameters_validUserID_succeeds() {

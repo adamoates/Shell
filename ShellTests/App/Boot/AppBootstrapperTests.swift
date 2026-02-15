@@ -12,7 +12,6 @@ import XCTest
 /// Following TDD with clean test doubles (Fakes and Spies)
 @MainActor
 final class AppBootstrapperTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     /// Fake RestoreSessionUseCase - returns stubbed status
@@ -142,4 +141,3 @@ final class AppBootstrapperTests: XCTestCase {
         XCTAssertEqual(router.routedStates.count, 1, "Should route exactly once")
     }
 }
-

@@ -10,7 +10,6 @@ import UIKit
 /// Utility class to handle keyboard show/hide events and adjust scroll view insets
 /// Automatically manages content insets when keyboard appears/disappears
 final class KeyboardHandler {
-
     // MARK: - Properties
 
     private weak var scrollView: UIScrollView?

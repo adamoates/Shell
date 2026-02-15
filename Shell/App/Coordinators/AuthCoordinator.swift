@@ -121,7 +121,10 @@ extension AuthCoordinator: LoginViewControllerDelegate {
         Task { @MainActor in
             do {
                 // Call backend to send password reset email
-                let url = URL(string: "http://localhost:3000/auth/forgot-password")!
+                guard let url = URL(string: "http://localhost:3000/auth/forgot-password") else {
+                    logger.error("Invalid forgot password URL", category: "coordinator")
+                    return
+                }
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")

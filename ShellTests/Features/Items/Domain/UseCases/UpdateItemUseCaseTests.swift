@@ -10,7 +10,6 @@ import XCTest
 
 /// Tests for UpdateItemUseCase
 final class UpdateItemUseCaseTests: XCTestCase {
-
     // MARK: - Test Doubles
 
     private actor MockItemsRepository: ItemsRepository {

@@ -12,7 +12,6 @@ import Foundation
 /// Thread-safe actor-based storage for items.
 /// Used for development and testing until backend is ready.
 actor InMemoryItemsRepository: ItemsRepository {
-
     // MARK: - Properties
 
     private var items: [Item] = []
