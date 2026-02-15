@@ -109,11 +109,20 @@ SwiftSDK/          # Reusable utilities (Validation, Observer, Storage)
 
 ## Project State
 
-**Current Features**: Dog (CRUD + Auth), Items (HTTP integration)
-**Tests**: 333 passing (33 Dog unit + 4 integration + others)
+**Current Features**:
+- ✅ **Auth** (OAuth 2.0 + OIDC with backend integration)
+- ✅ **Items** (HTTP CRUD, offline support)
+- ✅ **Dog** (Full CRUD with session validation)
+
+**Tests**: 383 passing
+- 50+ Auth tests (domain, infrastructure, integration)
+- 333 existing tests (Dog, Items, Profile, Core)
+
 **Architecture**: Complete (Domain, Infrastructure, Presentation layers)
 
-**Reference Implementation**: `Features/Items/` (HTTP repository, full CRUD)
+**Reference Implementations**:
+- `Features/Auth/` - Backend OAuth 2.0 integration, Keychain, 401 auto-refresh
+- `Features/Items/` - HTTP repository, full CRUD
 
 ---
 
