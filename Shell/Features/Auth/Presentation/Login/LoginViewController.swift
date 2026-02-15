@@ -341,7 +341,30 @@ extension LoginViewController: UITextFieldDelegate {
 
 extension LoginViewController {
     @objc private func forgotPasswordTapped() {
-        delegate?.loginViewControllerDidRequestForgotPassword(self)
+        // Show alert to enter email for password reset
+        let alert = UIAlertController(
+            title: "Reset Password",
+            message: "Enter your email address to receive a password reset link.",
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = "Email"
+            textField.keyboardType = .emailAddress
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+        }
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "Send Link", style: .default) { [weak self, weak alert] _ in
+            guard let email = alert?.textFields?.first?.text, !email.isEmpty else {
+                return
+            }
+            self?.delegate?.loginViewController(self!, didRequestPasswordResetFor: email)
+        })
+
+        present(alert, animated: true)
         UIAccessibility.post(notification: .announcement, argument: "Forgot password selected")
     }
 

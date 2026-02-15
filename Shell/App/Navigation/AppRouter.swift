@@ -79,6 +79,11 @@ final class AppRouter: Router {
             // All guest flows route to guest coordinator
             coordinator.route(to: .unauthenticated)
 
+        case .resetPassword(let token):
+            // Show reset password screen with token
+            logger.debug("Routing to reset password", category: "navigation", context: ["token": String(token.prefix(8)) + "..."])
+            coordinator.showResetPassword(token: token)
+
         case .home:
             // Authenticated home
             coordinator.route(to: .authenticated)

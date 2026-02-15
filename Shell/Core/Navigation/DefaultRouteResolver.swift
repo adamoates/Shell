@@ -44,6 +44,16 @@ final class DefaultRouteResolver: RouteResolver {
         case "forgot-password":
             return .forgotPassword
 
+        case "reset-password":
+            // Extract token from query parameters
+            guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                  let queryItems = components.queryItems,
+                  let tokenItem = queryItems.first(where: { $0.name == "token" }),
+                  let token = tokenItem.value, !token.isEmpty else {
+                return .notFound(path: url.path)
+            }
+            return .resetPassword(token: token)
+
         case "home":
             return .home
 

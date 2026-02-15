@@ -21,6 +21,9 @@ indirect enum Route: Equatable {
     /// Forgot password flow
     case forgotPassword
 
+    /// Reset password with token
+    case resetPassword(token: String)
+
     // MARK: - Authenticated Routes
 
     /// Home screen (authenticated)
@@ -48,7 +51,7 @@ indirect enum Route: Equatable {
     /// Whether this route requires authentication
     var requiresAuth: Bool {
         switch self {
-        case .login, .signup, .forgotPassword:
+        case .login, .signup, .forgotPassword, .resetPassword:
             return false
         case .home, .profile, .settings, .identitySetup:
             return true
@@ -66,6 +69,8 @@ indirect enum Route: Equatable {
             return "Signup"
         case .forgotPassword:
             return "Forgot Password"
+        case .resetPassword(let token):
+            return "Reset Password (token: \(token.prefix(8))...)"
         case .home:
             return "Home"
         case .profile(let userID):

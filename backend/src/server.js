@@ -9,6 +9,8 @@ const { randomUUID } = crypto; // Use Node.js built-in UUID instead of 'uuid' pa
 const { createClient } = require('redis');
 const rateLimit = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis').default;
+const Mailgun = require('mailgun.js');
+const formData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +19,24 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.error('FATAL: JWT_SECRET not set in environment variables');
   process.exit(1);
+}
+
+// Mailgun configuration
+const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@shell-app.com';
+
+let mailgunClient = null;
+if (MAILGUN_API_KEY && MAILGUN_DOMAIN && MAILGUN_API_KEY !== 'your-mailgun-api-key-here') {
+  const mailgun = new Mailgun(formData);
+  mailgunClient = mailgun.client({
+    username: 'api',
+    key: MAILGUN_API_KEY
+  });
+  console.log('Mailgun configured for domain:', MAILGUN_DOMAIN);
+} else {
+  console.warn('Mailgun not configured - using mock email mode');
+  console.warn('Set MAILGUN_API_KEY, MAILGUN_DOMAIN, and FROM_EMAIL in .env to enable real emails');
 }
 
 // Database connection pool
@@ -543,6 +563,250 @@ app.post('/auth/logout', authenticateJWT, async (req, res) => {
     res.status(500).json({
       error: 'internal_error',
       message: 'Failed to logout'
+    });
+  }
+});
+
+// ============================================================================
+// PASSWORD RESET ENDPOINTS
+// ============================================================================
+
+// Email Service - Uses Mailgun if configured, falls back to mock mode
+async function sendPasswordResetEmail(email, token) {
+  const resetLink = `shell://reset-password?token=${token}`;
+
+  const emailSubject = 'Reset Your Shell Password';
+  const emailText = `Hello,
+
+You requested to reset your password for your Shell account.
+
+Tap the link below to reset your password:
+${resetLink}
+
+This link will expire in 1 hour.
+
+If you didn't request this, please ignore this email.
+
+Thanks,
+The Shell Team`;
+
+  const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #333;">Reset Your Shell Password</h2>
+      <p>Hello,</p>
+      <p>You requested to reset your password for your Shell account.</p>
+      <p>Tap the link below to reset your password:</p>
+      <p style="margin: 30px 0;">
+        <a href="${resetLink}" style="background-color: #007AFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">Reset Password</a>
+      </p>
+      <p style="color: #666; font-size: 14px;">Or copy and paste this link: <br><code>${resetLink}</code></p>
+      <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+      <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+      <p style="color: #999; font-size: 12px;">Thanks,<br>The Shell Team</p>
+    </div>
+  `;
+
+  // Use Mailgun if configured
+  if (mailgunClient) {
+    try {
+      const messageData = {
+        from: FROM_EMAIL,
+        to: email,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      };
+
+      const response = await mailgunClient.messages.create(MAILGUN_DOMAIN, messageData);
+
+      console.log(`✅ Password reset email sent via Mailgun to: ${email}`);
+      console.log(`   Message ID: ${response.id}`);
+      console.log(`   Token: ${token}`);
+
+      return { success: true, messageId: response.id, provider: 'mailgun' };
+    } catch (error) {
+      console.error('❌ Mailgun send failed:', error.message);
+      console.error('   Falling back to mock mode');
+      // Fall through to mock mode on error
+    }
+  }
+
+  // Mock mode (no Mailgun configured or Mailgun failed)
+  console.log('\n==========================================================');
+  console.log('📧 PASSWORD RESET EMAIL (MOCK MODE)');
+  console.log('==========================================================');
+  console.log(`To: ${email}`);
+  console.log(`Subject: ${emailSubject}`);
+  console.log('');
+  console.log('Hello,');
+  console.log('');
+  console.log('You requested to reset your password for your Shell account.');
+  console.log('');
+  console.log('Tap the link below to reset your password:');
+  console.log(`${resetLink}`);
+  console.log('');
+  console.log('This link will expire in 1 hour.');
+  console.log('');
+  console.log("If you didn't request this, please ignore this email.");
+  console.log('');
+  console.log('Thanks,');
+  console.log('The Shell Team');
+  console.log('==========================================================');
+  console.log(`🔗 Deep Link: ${resetLink}`);
+  console.log(`🔑 Token: ${token}`);
+  console.log('==========================================================\n');
+
+  return { success: true, messageId: 'mock-message-id', provider: 'mock' };
+}
+
+// POST /auth/forgot-password - Request password reset
+app.post('/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  const ipAddress = req.ip;
+  const userAgent = req.headers['user-agent'];
+
+  if (!email) {
+    return res.status(400).json({
+      error: 'validation_error',
+      message: 'Email is required',
+      field: 'email'
+    });
+  }
+
+  try {
+    // Check if user exists (but don't reveal this information to prevent email enumeration)
+    const userResult = await pool.query(
+      'SELECT user_id, email FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    // Always return success to prevent email enumeration
+    if (userResult.rows.length === 0) {
+      console.log(`Password reset requested for non-existent email: ${email}`);
+      await logAuthEvent(null, 'forgot_password', false, ipAddress, userAgent, 'Email not found');
+
+      // Return success anyway (security: don't reveal if email exists)
+      return res.json({
+        message: 'If an account exists with that email, a password reset link has been sent.'
+      });
+    }
+
+    const user = userResult.rows[0];
+    const userID = user.user_id;
+
+    // Generate reset token (32 random bytes)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash token before storing (SHA-256)
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set expiry to 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Store hashed token in database
+    await pool.query(
+      'UPDATE users SET reset_token_hash = $1, reset_token_expires_at = $2 WHERE user_id = $3',
+      [resetTokenHash, expiresAt, userID]
+    );
+
+    // Send password reset email (mock mode)
+    const emailResult = await sendPasswordResetEmail(email, resetToken);
+
+    if (emailResult.success) {
+      await logAuthEvent(userID, 'forgot_password', true, ipAddress, userAgent, 'Email sent (mock)');
+
+      res.json({
+        message: 'If an account exists with that email, a password reset link has been sent.'
+      });
+    } else {
+      throw new Error('Failed to send email');
+    }
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    await logAuthEvent(null, 'forgot_password', false, ipAddress, userAgent, error.message);
+
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to process password reset request'
+    });
+  }
+});
+
+// POST /auth/reset-password - Reset password with token
+app.post('/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  const ipAddress = req.ip;
+  const userAgent = req.headers['user-agent'];
+
+  if (!token || !newPassword) {
+    return res.status(400).json({
+      error: 'validation_error',
+      message: 'Token and new password are required'
+    });
+  }
+
+  // Validate password strength
+  const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{8,}$/;
+  if (!passwordRegex.test(newPassword)) {
+    return res.status(400).json({
+      error: 'weak_password',
+      message: 'Password must be at least 8 characters with 1 uppercase, 1 number, and 1 special character'
+    });
+  }
+
+  try {
+    // Hash the provided token
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with matching token that hasn't expired
+    const userResult = await pool.query(
+      `SELECT user_id, email FROM users
+       WHERE reset_token_hash = $1
+       AND reset_token_expires_at > NOW()`,
+      [resetTokenHash]
+    );
+
+    if (userResult.rows.length === 0) {
+      await logAuthEvent(null, 'reset_password', false, ipAddress, userAgent, 'Invalid or expired token');
+
+      return res.status(400).json({
+        error: 'invalid_token',
+        message: 'Password reset token is invalid or has expired'
+      });
+    }
+
+    const user = userResult.rows[0];
+    const userID = user.user_id;
+
+    // Hash new password
+    const passwordHash = await hashPassword(newPassword);
+
+    // Update password and clear reset token
+    await pool.query(
+      `UPDATE users
+       SET password_hash = $1,
+           reset_token_hash = NULL,
+           reset_token_expires_at = NULL
+       WHERE user_id = $2`,
+      [passwordHash, userID]
+    );
+
+    // Invalidate all existing sessions for security
+    await pool.query('DELETE FROM sessions WHERE user_id = $1', [userID]);
+
+    await logAuthEvent(userID, 'reset_password', true, ipAddress, userAgent);
+
+    res.json({
+      message: 'Password reset successful. Please log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    await logAuthEvent(null, 'reset_password', false, ipAddress, userAgent, error.message);
+
+    res.status(500).json({
+      error: 'internal_error',
+      message: 'Failed to reset password'
     });
   }
 });

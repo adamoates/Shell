@@ -82,6 +82,52 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
         )
     }
 
+    func forgotPassword(email: String) async throws {
+        let endpoint = baseURL.appendingPathComponent("/auth/forgot-password")
+        let requestBody = ForgotPasswordRequest(email: email)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let encoder = JSONEncoder()
+        request.httpBody = try encoder.encode(requestBody)
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw mapHTTPError(statusCode: httpResponse.statusCode)
+        }
+    }
+
+    func resetPassword(token: String, newPassword: String) async throws {
+        let endpoint = baseURL.appendingPathComponent("/auth/reset-password")
+        let requestBody = ResetPasswordRequest(token: token, newPassword: newPassword)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let encoder = JSONEncoder()
+        request.httpBody = try encoder.encode(requestBody)
+
+        let (_, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            throw mapHTTPError(statusCode: httpResponse.statusCode)
+        }
+    }
+
     // MARK: - Private Helpers
 
     /// Perform JSON request with encoding/decoding

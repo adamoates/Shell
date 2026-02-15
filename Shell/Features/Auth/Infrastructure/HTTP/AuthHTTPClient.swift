@@ -39,6 +39,18 @@ protocol AuthHTTPClient: Sendable {
     /// - Returns: Registration response with user ID
     /// - Throws: AuthError on failure
     func register(email: String, password: String, confirmPassword: String) async throws -> RegisterResponse
+
+    /// Request password reset email
+    /// - Parameter email: User's email address
+    /// - Throws: AuthError on failure
+    func forgotPassword(email: String) async throws
+
+    /// Reset password using reset token
+    /// - Parameters:
+    ///   - token: Password reset token from email
+    ///   - newPassword: New password to set
+    /// - Throws: AuthError on failure
+    func resetPassword(token: String, newPassword: String) async throws
 }
 
 /// Authentication response from the backend
@@ -90,4 +102,15 @@ struct RegisterResponse: Sendable, Codable {
     let userID: String
     let email: String
     let message: String
+}
+
+/// Forgot password request DTO
+struct ForgotPasswordRequest: Codable {
+    let email: String
+}
+
+/// Reset password request DTO
+struct ResetPasswordRequest: Codable {
+    let token: String
+    let newPassword: String
 }

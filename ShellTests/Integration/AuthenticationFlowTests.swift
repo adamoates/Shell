@@ -191,4 +191,12 @@ private actor MockAuthHTTPClient: AuthHTTPClient {
             message: "Registration successful"
         )
     }
+
+    func forgotPassword(email: String) async throws {
+        // Mock - do nothing
+    }
+
+    func resetPassword(token: String, newPassword: String) async throws {
+        // Mock - do nothing
+    }
 }

@@ -343,4 +343,12 @@ actor MockActorAuthHTTPClient: AuthHTTPClient {
     func register(email: String, password: String, confirmPassword: String) async throws -> RegisterResponse {
         fatalError("Not implemented in mock")
     }
+
+    func forgotPassword(email: String) async throws {
+        fatalError("Not implemented in mock")
+    }
+
+    func resetPassword(token: String, newPassword: String) async throws {
+        fatalError("Not implemented in mock")
+    }
 }

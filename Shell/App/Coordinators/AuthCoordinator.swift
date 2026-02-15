@@ -11,7 +11,7 @@ import UIKit
 protocol LoginViewControllerDelegate: AnyObject {
     func loginViewController(_ controller: LoginViewController, didLoginWithUsername username: String)
     func loginViewControllerDidRequestSignUp(_ controller: LoginViewController)
-    func loginViewControllerDidRequestForgotPassword(_ controller: LoginViewController)
+    func loginViewController(_ controller: LoginViewController, didRequestPasswordResetFor email: String)
 }
 
 /// Protocol for AuthCoordinator to communicate completion back to parent
@@ -115,9 +115,45 @@ extension AuthCoordinator: LoginViewControllerDelegate {
         showSignUp()
     }
 
-    func loginViewControllerDidRequestForgotPassword(_ controller: LoginViewController) {
-        logger.info("Forgot password requested", category: "coordinator")
-        showForgotPassword()
+    func loginViewController(_ controller: LoginViewController, didRequestPasswordResetFor email: String) {
+        logger.info("Password reset requested", category: "coordinator", context: ["email": email])
+
+        Task { @MainActor in
+            do {
+                // Call backend to send password reset email
+                let url = URL(string: "http://localhost:3000/auth/forgot-password")!
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+                let body = ["email": email]
+                request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+                let (_, response) = try await URLSession.shared.data(for: request)
+
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    // Show success message
+                    let alert = UIAlertController(
+                        title: "Email Sent",
+                        message: "If an account exists with that email, a password reset link has been sent.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    navigationController.present(alert, animated: true)
+                } else {
+                    throw NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to send email"])
+                }
+            } catch {
+                // Show error message
+                let alert = UIAlertController(
+                    title: "Error",
+                    message: "Failed to send password reset email. Please try again.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                navigationController.present(alert, animated: true)
+            }
+        }
     }
 }
 

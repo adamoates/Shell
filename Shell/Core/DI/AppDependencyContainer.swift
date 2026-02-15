@@ -346,6 +346,22 @@ final class AppDependencyContainer {
         )
     }
 
+    /// Create a ForgotPassword use case
+    /// - Returns: New instance of ForgotPasswordUseCase
+    func makeForgotPasswordUseCase() -> ForgotPasswordUseCase {
+        DefaultForgotPasswordUseCase(
+            authHTTPClient: makeAuthHTTPClient()
+        )
+    }
+
+    /// Create a ResetPassword use case
+    /// - Returns: New instance of ResetPasswordUseCase
+    func makeResetPasswordUseCase() -> ResetPasswordUseCase {
+        DefaultResetPasswordUseCase(
+            authHTTPClient: makeAuthHTTPClient()
+        )
+    }
+
     /// Create a FetchItems use case
     /// - Returns: New instance of FetchItemsUseCase
     func makeFetchItemsUseCase() -> FetchItemsUseCase {

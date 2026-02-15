@@ -104,6 +104,28 @@ final class AppCoordinator: Coordinator {
         }
     }
 
+    /// Show reset password screen with token
+    /// - Parameter token: The password reset token
+    func showResetPassword(token: String) {
+        Task { @MainActor in
+            // Create ResetPasswordViewController with token
+            let resetPasswordUseCase = dependencyContainer.makeResetPasswordUseCase()
+            let viewModel = ResetPasswordViewModel(
+                token: token,
+                resetPasswordUseCase: resetPasswordUseCase
+            )
+            let viewController = ResetPasswordViewController(viewModel: viewModel)
+            viewController.delegate = self
+
+            // Present modally on top of current navigation stack
+            if let topViewController = navigationController.topViewController {
+                topViewController.present(viewController, animated: true)
+            } else {
+                navigationController.present(viewController, animated: true)
+            }
+        }
+    }
+
     /// Show identity setup flow
     /// - Parameter startStep: Optional starting step
     func showIdentitySetup(startStep: IdentityStep? = nil) {
@@ -399,5 +421,40 @@ extension AppCoordinator: IdentitySetupCoordinatorDelegate {
         // User cancelled identity setup, return to login
         clearPendingRoute()
         route(to: .unauthenticated)
+    }
+}
+
+// MARK: - ResetPasswordViewControllerDelegate
+
+extension AppCoordinator: ResetPasswordViewControllerDelegate {
+    func resetPasswordViewControllerDidSucceed(_ controller: ResetPasswordViewController) {
+        logger.info("Password reset successful", category: "coordinator")
+
+        Task { @MainActor in
+            // Dismiss the reset password screen
+            controller.dismiss(animated: true) { [weak self] in
+                // Show success message and return to login
+                let alert = UIAlertController(
+                    title: "Password Reset",
+                    message: "Your password has been reset successfully. Please log in with your new password.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+                    // Navigate to login
+                    self?.route(to: .unauthenticated)
+                })
+
+                self?.navigationController.present(alert, animated: true)
+            }
+        }
+    }
+
+    func resetPasswordViewControllerDidCancel(_ controller: ResetPasswordViewController) {
+        logger.info("Password reset cancelled", category: "coordinator")
+
+        Task { @MainActor in
+            // Dismiss the reset password screen
+            controller.dismiss(animated: true)
+        }
     }
 }
