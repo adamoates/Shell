@@ -44,6 +44,13 @@ enum AuthError: Error, Equatable {
 
     /// Unknown error
     case unknown(String)
+
+    /// Registration errors
+    case emailAlreadyExists
+    case invalidEmail
+    case weakPassword
+    case passwordMismatch
+    case registrationFailed
 }
 
 // MARK: - User-Facing Messages
@@ -76,6 +83,16 @@ extension AuthError {
             return "Invalid server response"
         case .unknown(let message):
             return message
+        case .emailAlreadyExists:
+            return "This email is already registered"
+        case .invalidEmail:
+            return "Please enter a valid email address"
+        case .weakPassword:
+            return "Password must be at least 8 characters with 1 uppercase, 1 number, and 1 special character"
+        case .passwordMismatch:
+            return "Passwords do not match"
+        case .registrationFailed:
+            return "Registration failed. Please try again."
         }
     }
 }

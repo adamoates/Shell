@@ -30,6 +30,15 @@ protocol AuthHTTPClient: Sendable {
     ///   - refreshToken: Current refresh token
     /// - Throws: AuthError on failure
     func logout(accessToken: String, refreshToken: String) async throws
+
+    /// Register a new user account
+    /// - Parameters:
+    ///   - email: User email address
+    ///   - password: User password
+    ///   - confirmPassword: Password confirmation
+    /// - Returns: Registration response with user ID
+    /// - Throws: AuthError on failure
+    func register(email: String, password: String, confirmPassword: String) async throws -> RegisterResponse
 }
 
 /// Authentication response from the backend
@@ -67,4 +76,18 @@ struct RefreshRequest: Codable {
 /// Logout request DTO
 struct LogoutRequest: Codable {
     let refreshToken: String
+}
+
+/// Register request DTO
+struct RegisterRequest: Codable {
+    let email: String
+    let password: String
+    let confirmPassword: String
+}
+
+/// Register response DTO
+struct RegisterResponse: Sendable, Codable {
+    let userID: String
+    let email: String
+    let message: String
 }

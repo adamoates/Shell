@@ -341,10 +341,12 @@ extension LoginViewController: UITextFieldDelegate {
 
 extension LoginViewController {
     @objc private func forgotPasswordTapped() {
+        delegate?.loginViewControllerDidRequestForgotPassword(self)
         UIAccessibility.post(notification: .announcement, argument: "Forgot password selected")
     }
 
     @objc private func signUpTapped() {
+        delegate?.loginViewControllerDidRequestSignUp(self)
         UIAccessibility.post(notification: .announcement, argument: "Sign up selected")
     }
 

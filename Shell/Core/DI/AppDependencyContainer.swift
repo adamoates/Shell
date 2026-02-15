@@ -190,6 +190,7 @@ final class AppDependencyContainer {
             navigationController: navigationController,
             validateCredentials: makeValidateCredentialsUseCase(),
             login: makeLoginUseCase(),
+            register: makeRegisterUseCase(),
             logger: makeLogger()
         )
     }
@@ -334,6 +335,14 @@ final class AppDependencyContainer {
         DefaultRefreshSessionUseCase(
             authHTTPClient: makeAuthHTTPClient(),
             sessionRepository: makeSessionRepository()
+        )
+    }
+
+    /// Create a Register use case
+    /// - Returns: New instance of RegisterUseCase
+    func makeRegisterUseCase() -> RegisterUseCase {
+        DefaultRegisterUseCase(
+            authHTTPClient: makeAuthHTTPClient()
         )
     }
 

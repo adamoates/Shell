@@ -70,6 +70,18 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
         }
     }
 
+    func register(email: String, password: String, confirmPassword: String) async throws -> RegisterResponse {
+        let endpoint = baseURL.appendingPathComponent("/auth/register")
+        let requestBody = RegisterRequest(email: email, password: password, confirmPassword: confirmPassword)
+
+        return try await performRequest(
+            url: endpoint,
+            method: "POST",
+            body: requestBody,
+            responseType: RegisterResponse.self
+        )
+    }
+
     // MARK: - Private Helpers
 
     /// Perform JSON request with encoding/decoding
@@ -110,10 +122,14 @@ actor URLSessionAuthHTTPClient: AuthHTTPClient {
     }
 
     /// Map HTTP status codes to AuthError cases
+    /// Note: For more specific error handling, parse the response body's "error" field
     private func mapHTTPError(statusCode: Int) -> AuthError {
         switch statusCode {
         case 401:
             return .invalidCredentials
+        case 409:
+            // Conflict - email already exists
+            return .emailAlreadyExists
         case 400...499:
             return .invalidResponse
         case 500...599:

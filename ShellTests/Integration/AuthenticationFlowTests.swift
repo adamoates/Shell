@@ -183,4 +183,12 @@ private actor MockAuthHTTPClient: AuthHTTPClient {
     func logout(accessToken: String, refreshToken: String) async throws {
         // Mock logout - do nothing
     }
+
+    func register(email: String, password: String, confirmPassword: String) async throws -> RegisterResponse {
+        RegisterResponse(
+            userID: "mock-user-id",
+            email: email,
+            message: "Registration successful"
+        )
+    }
 }
