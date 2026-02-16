@@ -429,6 +429,7 @@ final class AppDependencyContainer {
 
     // MARK: - Dog ViewModels
 
+    @MainActor
     func makeDogListViewModel() -> DogListViewModel {
         DogListViewModel(
             fetchDogsUseCase: makeFetchDogsUseCase(),
@@ -436,6 +437,7 @@ final class AppDependencyContainer {
         )
     }
 
+    @MainActor
     func makeDogEditorViewModel(dog: Dog? = nil) -> DogEditorViewModel {
         DogEditorViewModel(
             dog: dog,
