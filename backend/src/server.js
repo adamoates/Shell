@@ -294,8 +294,8 @@ app.post('/auth/register', async (req, res) => {
     
     if (existingUser.rows.length > 0) {
       await logAuthEvent(null, 'register', false, ipAddress, userAgent, 'Email already registered');
-      return res.status(400).json({
-        error: 'validation_error',
+      return res.status(409).json({
+        error: 'conflict',
         message: 'Email already registered',
         field: 'email'
       });
