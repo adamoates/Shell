@@ -85,9 +85,9 @@ final class FieldValidatorTests: XCTestCase {
         let field = FieldValidator(
             initialValue: "",
             validator: validator
-        )            { _ in
+        ) { _ in
                 return "Custom error message"
-            }
+        }
 
         field.value = "h" // Too short
 

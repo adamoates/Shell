@@ -47,6 +47,9 @@ A comprehensive reference implementation for migrating legacy iOS codebases to m
 
 ## 🏗️ Architecture
 
+Canonical architecture guidance lives in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+If a README example conflicts with implementation details, defer to `ARCHITECTURE.md`.
+
 ```
 Shell/
 ├── Features/              # Feature modules (vertical slices)
@@ -81,7 +84,7 @@ Shell/
 - ViewControllers (UIKit programmatic)
 - Coordinators (navigation flows)
 
-**Dependency Flow**: `Domain ← Infrastructure ← Presentation`
+**Dependency Rule**: Presentation and Infrastructure depend inward on Domain. Domain does not depend on either layer.
 
 ---
 
@@ -179,16 +182,20 @@ Every feature follows this structure:
 Features/{Feature}/
 ├── Domain/
 │   ├── Entities/              # Core models (Sendable structs)
+│   ├── Contracts/             # Repository/data access protocols
 │   ├── UseCases/              # Business logic (protocols + implementations)
-│   └── Repositories/          # Data access protocols
+│   └── Errors/                # Optional typed domain errors
 ├── Infrastructure/
 │   └── Repositories/          # Repository implementations
 │       ├── InMemory{Feature}Repository.swift
 │       └── HTTP{Feature}Repository.swift
 └── Presentation/
-    ├── {Feature}Coordinator.swift      # Navigation
-    ├── ViewModels/{Feature}ViewModel.swift  # @MainActor
-    └── Views/{Feature}ViewController.swift  # UIKit
+    ├── {ScreenA}/             # e.g., List/, ItemEditor/, Login/
+    │   ├── {ScreenA}ViewModel.swift
+    │   └── {ScreenA}ViewController.swift
+    └── {ScreenB}/
+        ├── {ScreenB}ViewModel.swift
+        └── {ScreenB}ViewController.swift
 ```
 
 ### Reference Implementations

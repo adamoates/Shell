@@ -82,11 +82,11 @@ enum BootResult {
 
 **Rule:** Protocols that define "what the app needs" live in:
 - `Core/Contracts/` (or `Core/Domain/`)
-- `Features/{Feature}/Domain/Protocols/`
+- `Features/{Feature}/Domain/Contracts/`
 
 **Implementations** live in:
 - `Core/Infrastructure/`
-- `Features/{Feature}/Data/`
+- `Features/{Feature}/Infrastructure/Repositories/`
 
 **Why:** Domain owns abstractions. Infrastructure adapts to them.
 
@@ -170,19 +170,29 @@ func start() {
 Shell/
   App/
     Boot/              # Thin orchestration only
-    Coordinators/      # Navigation control
-    DI/                # Composition root
+    Coordinators/      # App-level and feature flow coordinators
+    Navigation/        # App-level navigation wiring
 
   Core/
+    Coordinator/       # Base coordinator protocol
+    DI/                # Composition root
     Contracts/         # Protocols defining needs
     Infrastructure/    # Platform implementations
+    Navigation/        # Routing primitives and access control
+    Presentation/      # Shared UI components
 
   Features/
     {Feature}/
-      Domain/          # Business logic, entities, protocols
-      Data/            # Repository implementations
-      Presentation/    # ViewModels, Views, Coordinators
+      Domain/          # Business logic, entities, contracts, optional errors
+      Infrastructure/  # Repository/API/HTTP implementations
+      Presentation/    # Screen folders with ViewModel + ViewController/View
 ```
+
+### App vs Core Coordinator Split
+
+- `Shell/Core/Coordinator/` holds shared coordinator abstractions (`Coordinator` protocol, common lifecycle helpers).
+- `Shell/App/Coordinators/` holds concrete app/feature flow coordinators (`AuthCoordinator`, `ItemsCoordinator`, etc.).
+- Feature screens should not define their own parallel coordinator base types.
 
 ## Review Checklist
 
@@ -210,7 +220,7 @@ Ask these questions:
 
 3. **"Does this define a need or provide implementation?"**
    - Need → Protocol in Contracts/Domain
-   - Implementation → Core/Infrastructure or Feature/Data
+   - Implementation → Core/Infrastructure or Feature/Infrastructure
 
 4. **"Is this orchestration or logic?"**
    - Orchestration → Boot (thin)

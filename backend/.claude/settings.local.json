@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs:*)",
+      "Bash(docker compose:*)",
+      "Bash(open:*)",
+      "Bash(docker info:*)",
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(printf:*)",
+      "Bash(ACCESS_TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMGJhYjM1OC0yZTVmLTQ5NjMtYmI0Zi01ZTI3OGVlM2Y5NzciLCJlbWFpbCI6ImFkYW1Ac2hlbGwuYXBwIiwiaWF0IjoxNzcxMDk4NzA0LCJleHAiOjE3NzEwOTk2MDR9.8tuif_yqVx7CO1yXcsrdfDCWkNlBpImd9PFsgquKTfs\")",
+      "Bash(find:*)",
+      "Bash(xcodebuild clean:*)",
+      "Bash(xcodebuild build:*)",
+      "Bash(xcodebuild test:*)",
+      "Bash(tee:*)",
+      "Bash(1)",
+      "Bash(REFRESH_TOKEN=\"c7994d4d-33f2-4b2f-9b5a-ba40ffdaa391\":*)",
+      "Bash(xcrun simctl boot:*)",
+      "Bash(xcrun simctl install:*)",
+      "Bash(xcrun simctl launch:*)",
+      "Bash(xcrun simctl io:*)",
+      "Bash(git remote get-url:*)",
+      "mcp__github__search_repositories",
+      "mcp__github__create_repository",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

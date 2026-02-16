@@ -7,20 +7,29 @@ Production-ready iOS boilerplate demonstrating Clean Architecture + MVVM for mig
 
 ```
 Shell/
-├── Features/           # Feature modules (Auth, Items, Profile)
+├── App/
+│   ├── Boot/                 # App launch orchestration
+│   ├── Coordinators/         # Concrete flow coordinators
+│   └── Navigation/           # App-level routing integration
+├── Core/                     # Shared architecture/runtime infrastructure
+│   ├── Contracts/            # Cross-feature protocol contracts
+│   ├── Coordinator/          # Coordinator base abstractions
+│   ├── DI/                   # Composition root (AppDependencyContainer)
+│   ├── Infrastructure/       # Shared implementations
+│   ├── Navigation/           # Route types/resolvers/guards
+│   └── Presentation/         # Shared UI components
+├── Features/                 # Feature modules (Auth, Items, Profile, Dog)
 │   ├── {Feature}/
 │   │   ├── Domain/             # Business logic layer
+│   │   │   ├── Contracts/      # Feature protocol contracts
 │   │   │   ├── Entities/       # Core domain models (Sendable)
-│   │   │   └── UseCases/       # Business logic (protocols + implementations)
+│   │   │   ├── UseCases/       # Business logic (protocols + implementations)
+│   │   │   └── Errors/         # Optional domain errors
 │   │   ├── Presentation/       # UI layer
-│   │   │   ├── ViewModels/     # MVVM ViewModels (@MainActor, ObservableObject)
-│   │   │   └── Views/          # UIKit ViewControllers or SwiftUI Views
+│   │   │   └── {Screen}/       # Screen folders with VM + VC/View pairs
 │   │   └── Infrastructure/     # External concerns
-│   │       └── Repositories/   # Data access implementations
-├── Core/               # Shared infrastructure
-│   ├── DI/            # Dependency Injection (AppDependencyContainer)
-│   ├── Contracts/     # Shared protocols (Repository, UseCase patterns)
-│   └── Infrastructure/# HTTP clients, Config, Navigation
+│   │       ├── Repositories/   # Data access implementations
+│   │       └── API|HTTP/       # Optional transport adapters
 └── SwiftSDK/          # Reusable utilities (Validator, Observer, Storage)
 ```
 
@@ -113,10 +122,10 @@ Use `/new-feature` skill, or follow this structure:
 1. Domain Layer
    - Create entity in Shell/Features/{Feature}/Domain/Entities/{Entity}.swift
    - Create use case protocol in Domain/UseCases/{Action}{Entity}UseCase.swift
-   - Create repository protocol in Domain/Repositories/{Feature}Repository.swift
+   - Create repository protocol in Domain/Contracts/{Feature}Repository.swift
 
 2. Infrastructure Layer
-   - Implement InMemory repository in Infrastructure/In Memory{Feature}Repository.swift
+   - Implement InMemory repository in Infrastructure/Repositories/InMemory{Feature}Repository.swift
    - (Later) Implement HTTP repository in Infrastructure/Repositories/HTTP{Feature}Repository.swift
 
 3. Presentation Layer
@@ -232,8 +241,19 @@ class MockURLProtocol: URLProtocol {
 - ✅ **Items Module**: Reference implementation with HTTP repository
 - ✅ **Backend API**: Docker Postgres + Node.js at http://localhost:3000/v1
 - ✅ **Schema Aligned**: iOS Item model matches backend API
-- ⚠️ **Profile Module**: Read-only (needs edit features)
-- ⚠️ **Auth Module**: Placeholder (needs full implementation)
+- ✅ **Auth Module**: Implemented login/sign-up/session restore/refresh/password reset flows
+- ⚠️ **Known Architecture Deviation**: `Shell/App/Coordinators/AuthCoordinator.swift` performs direct forgot-password network call; planned migration is use case + repository/client abstraction
+- ⚠️ **Profile Module**: Core editing flow exists; remote sync remains feature-flag controlled
+
+### Doc Drift Guard
+
+Before merging documentation changes:
+
+- Confirm architecture paths in docs exist in the repository.
+- Keep protocol locations as `Core/Contracts` or `Features/{Feature}/Domain/Contracts`.
+- Keep concrete wiring responsibility in `Shell/Core/DI/AppDependencyContainer.swift`.
+- Document any temporary architecture deviations with file path + migration target.
+- If this file conflicts with `ARCHITECTURE.md`, update this file to match `ARCHITECTURE.md`.
 
 ### Feature Flags
 Located in `Shell/Core/Infrastructure/Config/APIConfig.swift`:

@@ -58,7 +58,7 @@ Shell implements **Clean Architecture** with strict layer separation, ensuring:
 │                  Infrastructure Layer                   │
 │                                                           │
 │  • Repository Implementations (InMemory, future HTTP)    │
-│  • API Clients (URLSession, Alamofire)                   │
+│  • API Clients (URLSession-based)                         │
 │  • Persistence (UserDefaults, Keychain, Core Data)       │
 │  • External Framework Adapters                           │
 │                                                           │
@@ -75,6 +75,54 @@ Shell implements **Clean Architecture** with strict layer separation, ensuring:
 - ❌ **Domain** NEVER depends on Presentation or Infrastructure
 
 This ensures domain logic remains pure, testable, and independent of frameworks.
+
+---
+
+## Current Source of Truth
+
+`ARCHITECTURE.md` is the canonical architecture reference for this repository.
+When examples in other docs drift, align those docs to this file and to current code.
+
+### Canonical Dependency Direction
+
+- Presentation depends inward on Domain contracts/entities/use cases.
+- Infrastructure depends inward on Domain contracts/entities.
+- Domain does not depend on Presentation or Infrastructure.
+- Concrete dependency wiring happens in `Shell/Core/DI/AppDependencyContainer.swift`.
+
+### Canonical Folder Map (Current Repo)
+
+```
+Shell/
+├── App/
+│   ├── Boot/
+│   ├── Coordinators/
+│   └── Navigation/
+├── Core/
+│   ├── Contracts/
+│   ├── Coordinator/
+│   ├── DI/
+│   ├── Infrastructure/
+│   ├── Navigation/
+│   └── Presentation/
+└── Features/
+    └── {Feature}/
+        ├── Domain/            # Contracts, Entities, UseCases, optional Errors
+        ├── Infrastructure/    # Repositories, API/HTTP adapters (as needed)
+        └── Presentation/      # Screen folders with ViewModel + VC/View pairs
+```
+
+### Allowed Exceptions Policy
+
+Temporary deviations from the architecture are allowed only when:
+
+- The deviation is explicitly documented with file path and reason.
+- The intended migration target is named.
+- The deviation is removed in a follow-up change.
+
+Current documented deviation:
+
+- `Shell/App/Coordinators/AuthCoordinator.swift` contains a direct forgot-password network call using `URLSession`. Planned migration: move this call behind an auth use case + repository/client abstraction, then keep coordinator focused on routing/orchestration only.
 
 ---
 
@@ -106,9 +154,9 @@ Encapsulate single business operations.
 ```swift
 // Features/Items/Domain/UseCases/CreateItemUseCase.swift
 actor CreateItemUseCase {
-    private let repository: ItemsRepositoryProtocol
+    private let repository: ItemsRepository
 
-    init(repository: ItemsRepositoryProtocol) {
+    init(repository: ItemsRepository) {
         self.repository = repository
     }
 
@@ -133,8 +181,8 @@ actor CreateItemUseCase {
 Define data access contracts.
 
 ```swift
-// Features/Items/Domain/Contracts/ItemsRepositoryProtocol.swift
-protocol ItemsRepositoryProtocol: Actor {
+// Features/Items/Domain/Contracts/ItemsRepository.swift
+protocol ItemsRepository: Actor {
     func fetchAll() async throws -> [Item]
     func create(_ item: Item) async throws
     func update(_ item: Item) async throws
@@ -152,21 +200,23 @@ protocol ItemsRepositoryProtocol: Actor {
 Business rule violations.
 
 ```swift
-// Features/Profile/Domain/Errors/IdentityValidationError.swift
-enum IdentityValidationError: Error, LocalizedError {
-    case screenNameTooShort
-    case screenNameTooLong
-    case screenNameInvalidCharacters
-    case birthdayInFuture
-    case birthdayTooRecent
+// Features/Auth/Domain/Errors/AuthError.swift
+enum AuthError: Error, LocalizedError {
+    case invalidCredentials
+    case networkError
+    case serverError(String)
+    case unknown
 
     var errorDescription: String? {
         switch self {
-        case .screenNameTooShort:
-            return "Screen name must be at least 2 characters"
-        case .screenNameTooLong:
-            return "Screen name must be 20 characters or less"
-        // ...
+        case .invalidCredentials:
+            return "Invalid email or password."
+        case .networkError:
+            return "Network connection appears to be offline."
+        case .serverError(let message):
+            return message
+        case .unknown:
+            return "An unexpected error occurred."
         }
     }
 }
@@ -186,9 +236,9 @@ enum IdentityValidationError: Error, LocalizedError {
 Presentation logic, state management, and Combine publishers.
 
 ```swift
-// Features/Items/Presentation/List/ItemsListViewModel.swift
+// Features/Items/Presentation/List/ListViewModel.swift
 @MainActor
-final class ItemsListViewModel: ObservableObject {
+final class ListViewModel: ObservableObject {
     // MARK: - Published State
     @Published private(set) var items: [Item] = []
     @Published private(set) var isLoading = false
@@ -239,12 +289,12 @@ final class ItemsListViewModel: ObservableObject {
 Thin view layer, only handles UI updates.
 
 ```swift
-// Features/Items/Presentation/List/ItemsListViewController.swift
-final class ItemsListViewController: UIViewController {
-    private let viewModel: ItemsListViewModel
+// Features/Items/Presentation/List/ListViewController.swift
+final class ListViewController: UIViewController {
+    private let viewModel: ListViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    init(viewModel: ItemsListViewModel) {
+    init(viewModel: ListViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
@@ -335,8 +385,8 @@ struct ProfileEditorView: View {
 #### Repository Implementations (`Infrastructure/Repositories/`)
 
 ```swift
-// Features/Items/Infrastructure/Repositories/InMemoryItemsRepository.swift
-actor InMemoryItemsRepository: ItemsRepositoryProtocol {
+// Features/Items/Infrastructure/InMemoryItemsRepository.swift
+actor InMemoryItemsRepository: ItemsRepository {
     private var items: [Item] = []
 
     func fetchAll() async throws -> [Item] {
@@ -345,21 +395,21 @@ actor InMemoryItemsRepository: ItemsRepositoryProtocol {
 
     func create(_ item: Item) async throws {
         guard !items.contains(where: { $0.id == item.id }) else {
-            throw ItemRepositoryError.duplicateID
+            throw ItemError.createFailed
         }
         items.append(item)
     }
 
     func update(_ item: Item) async throws {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else {
-            throw ItemRepositoryError.notFound
+            throw ItemError.notFound
         }
         items[index] = item
     }
 
     func delete(id: UUID) async throws {
         guard let index = items.firstIndex(where: { $0.id == id }) else {
-            throw ItemRepositoryError.notFound
+            throw ItemError.notFound
         }
         items.remove(at: index)
     }
@@ -373,20 +423,26 @@ actor InMemoryItemsRepository: ItemsRepositoryProtocol {
 
 ```swift
 // Future: Features/Items/Infrastructure/Repositories/HTTPItemsRepository.swift
-actor HTTPItemsRepository: ItemsRepositoryProtocol {
-    private let apiClient: APIClient
+actor HTTPItemsRepository: ItemsRepository {
+    private let apiClient: ItemsHTTPClient
 
-    init(apiClient: APIClient) {
+    init(apiClient: ItemsHTTPClient) {
         self.apiClient = apiClient
     }
 
     func fetchAll() async throws -> [Item] {
-        let response: ItemsResponse = try await apiClient.get("/items")
+        let response: ItemsResponse = try await apiClient.request(
+            HTTPEndpoint(path: "items", method: .get),
+            responseType: ItemsResponse.self
+        )
         return response.items
     }
 
     func create(_ item: Item) async throws {
-        try await apiClient.post("/items", body: item)
+        let payload = try JSONEncoder().encode(item)
+        try await apiClient.request(
+            HTTPEndpoint(path: "items", method: .post, body: payload)
+        )
     }
 
     // ... HTTP implementations
@@ -443,7 +499,7 @@ ViewModels and Use Cases **don't change** - they depend on the protocol, not the
 
 ### Example Flow: Creating an Item
 
-1. **User Action**: User taps "Add Item" button in `ItemsListViewController`
+1. **User Action**: User taps "Add Item" button in `ListViewController`
 2. **View → ViewModel**: `await viewModel.createItem(name: "Buy milk")`
 3. **ViewModel → Use Case**: `try await createItemUseCase.execute(name: "Buy milk")`
 4. **Use Case → Repository**: `try await repository.create(item)`
@@ -474,10 +530,10 @@ The Repository Pattern abstracts data access, allowing the domain to remain inde
 
 ```
 Domain Layer (Protocol):
-Features/Items/Domain/Contracts/ItemsRepositoryProtocol.swift
+Features/Items/Domain/Contracts/ItemsRepository.swift
 
 Infrastructure Layer (Implementation):
-Features/Items/Infrastructure/Repositories/InMemoryItemsRepository.swift
+Features/Items/Infrastructure/InMemoryItemsRepository.swift
 Features/Items/Infrastructure/Repositories/HTTPItemsRepository.swift (future)
 ```
 
@@ -494,15 +550,15 @@ Features/Items/Infrastructure/Repositories/HTTPItemsRepository.swift (future)
 // v1.0: In-memory repository
 let repository = InMemoryItemsRepository()
 let fetchUseCase = FetchItemsUseCase(repository: repository)
-let viewModel = ItemsListViewModel(fetchItemsUseCase: fetchUseCase, ...)
+let viewModel = ListViewModel(fetchItemsUseCase: fetchUseCase, ...)
 
 // v2.0: HTTP repository (same ViewModel code!)
 let repository = HTTPItemsRepository(apiClient: apiClient)
 let fetchUseCase = FetchItemsUseCase(repository: repository)
-let viewModel = ItemsListViewModel(fetchItemsUseCase: fetchUseCase, ...)
+let viewModel = ListViewModel(fetchItemsUseCase: fetchUseCase, ...)
 ```
 
-**ViewModel doesn't change** - it depends on `ItemsRepositoryProtocol`, not the concrete type.
+**ViewModel doesn't change** - it depends on `ItemsRepository`, not the concrete type.
 
 ---
 
@@ -531,9 +587,9 @@ protocol Coordinator: AnyObject {
 // App/Coordinators/ItemsCoordinator.swift
 final class ItemsCoordinator: Coordinator {
     let navigationController: UINavigationController
-    private let dependencies: AppDependencies
+    private let dependencies: AppDependencyContainer
 
-    init(navigationController: UINavigationController, dependencies: AppDependencies) {
+    init(navigationController: UINavigationController, dependencies: AppDependencyContainer) {
         self.navigationController = navigationController
         self.dependencies = dependencies
     }
@@ -543,21 +599,18 @@ final class ItemsCoordinator: Coordinator {
     }
 
     func showItemsList() {
-        let viewModel = ItemsListViewModel(
-            fetchItemsUseCase: dependencies.fetchItemsUseCase,
-            deleteItemUseCase: dependencies.deleteItemUseCase
-        )
+        let viewModel = ListViewModel(fetchItems: dependencies.makeFetchItemsUseCase())
         viewModel.coordinator = self
 
-        let viewController = ItemsListViewController(viewModel: viewModel)
+        let viewController = ListViewController(viewModel: viewModel)
         navigationController.pushViewController(viewController, animated: true)
     }
 
     func showItemEditor(item: Item?) {
         let viewModel = ItemEditorViewModel(
-            item: item,
-            createItemUseCase: dependencies.createItemUseCase,
-            updateItemUseCase: dependencies.updateItemUseCase
+            createItem: dependencies.makeCreateItemUseCase(),
+            updateItem: dependencies.makeUpdateItemUseCase(),
+            itemToEdit: item
         )
 
         let viewController = ItemEditorViewController(viewModel: viewModel)
@@ -565,8 +618,7 @@ final class ItemsCoordinator: Coordinator {
     }
 
     func showItemDetail(item: Item) {
-        let viewModel = ItemDetailViewModel(item: item)
-        let viewController = DetailViewController(viewModel: viewModel)
+        let viewController = DetailViewController(item: item)
         navigationController.pushViewController(viewController, animated: true)
     }
 }
@@ -576,14 +628,14 @@ final class ItemsCoordinator: Coordinator {
 
 ```swift
 // ViewModel requests navigation
-protocol ItemsListViewModelCoordinator: AnyObject {
+protocol ListViewModelCoordinator: AnyObject {
     func showItemEditor(item: Item?)
     func showItemDetail(item: Item)
 }
 
 @MainActor
-final class ItemsListViewModel: ObservableObject {
-    weak var coordinator: ItemsListViewModelCoordinator?
+final class ListViewModel: ObservableObject {
+    weak var coordinator: ListViewModelCoordinator?
 
     func addItemTapped() {
         coordinator?.showItemEditor(item: nil) // Create new item
@@ -624,8 +676,8 @@ final class AppDependencyContainer {
     let updateItemUseCase: UpdateItemUseCase
     let deleteItemUseCase: DeleteItemUseCase
 
-    let setupIdentityUseCase: SetupIdentityUseCase
-    let fetchUserProfileUseCase: FetchUserProfileUseCase
+    let setupIdentityUseCase: CompleteIdentitySetupUseCase
+    let fetchUserProfileUseCase: FetchProfileUseCase
 
     init() {
         // Create repositories
@@ -633,13 +685,13 @@ final class AppDependencyContainer {
         userProfileRepository = InMemoryUserProfileRepository()
 
         // Create use cases with repository dependencies
-        fetchItemsUseCase = FetchItemsUseCase(repository: itemsRepository)
-        createItemUseCase = CreateItemUseCase(repository: itemsRepository)
-        updateItemUseCase = UpdateItemUseCase(repository: itemsRepository)
-        deleteItemUseCase = DeleteItemUseCase(repository: itemsRepository)
+        fetchItemsUseCase = DefaultFetchItemsUseCase(repository: itemsRepository)
+        createItemUseCase = DefaultCreateItemUseCase(repository: itemsRepository)
+        updateItemUseCase = DefaultUpdateItemUseCase(repository: itemsRepository)
+        deleteItemUseCase = DefaultDeleteItemUseCase(repository: itemsRepository)
 
-        setupIdentityUseCase = SetupIdentityUseCase(repository: userProfileRepository)
-        fetchUserProfileUseCase = FetchUserProfileUseCase(repository: userProfileRepository)
+        setupIdentityUseCase = DefaultCompleteIdentitySetupUseCase(repository: userProfileRepository)
+        fetchUserProfileUseCase = DefaultFetchProfileUseCase(repository: userProfileRepository)
     }
 }
 ```
@@ -658,19 +710,19 @@ ViewModels
 ViewControllers
 ```
 
-### Example: Creating ItemsListViewController
+### Example: Creating ListViewController
 
 ```swift
 // In ItemsCoordinator
 func showItemsList() {
     // 1. Create ViewModel with injected Use Cases
-    let viewModel = ItemsListViewModel(
+    let viewModel = ListViewModel(
         fetchItemsUseCase: dependencies.fetchItemsUseCase,
         deleteItemUseCase: dependencies.deleteItemUseCase
     )
 
     // 2. Create ViewController with injected ViewModel
-    let viewController = ItemsListViewController(viewModel: viewModel)
+    let viewController = ListViewController(viewModel: viewModel)
 
     // 3. Push onto navigation stack
     navigationController.pushViewController(viewController, animated: true)
@@ -775,7 +827,7 @@ Shell uses **Swift 6 strict concurrency** with **actors** and **async/await**.
 ### Example: Actor-Based Repository
 
 ```swift
-actor InMemoryItemsRepository: ItemsRepositoryProtocol {
+actor InMemoryItemsRepository: ItemsRepository {
     private var items: [Item] = [] // Isolated to actor
 
     func fetchAll() async throws -> [Item] {
@@ -794,7 +846,7 @@ actor InMemoryItemsRepository: ItemsRepositoryProtocol {
 
 ```swift
 actor CreateItemUseCase {
-    private let repository: ItemsRepositoryProtocol
+    private let repository: ItemsRepository
 
     func execute(name: String) async throws -> Item {
         // Validate on actor
@@ -816,7 +868,7 @@ actor CreateItemUseCase {
 
 ```swift
 @MainActor
-final class ItemsListViewModel: ObservableObject {
+final class ListViewModel: ObservableObject {
     @Published private(set) var items: [Item] = [] // Main thread
 
     func loadItems() async {
@@ -858,11 +910,9 @@ Shell organizes features using **vertical slices** - each feature contains all i
 Features/Items/
 ├── Domain/
 │   ├── Contracts/
-│   │   └── ItemsRepositoryProtocol.swift
+│   │   └── ItemsRepository.swift
 │   ├── Entities/
 │   │   └── Item.swift
-│   ├── Errors/
-│   │   └── ItemValidationError.swift
 │   └── UseCases/
 │       ├── FetchItemsUseCase.swift
 │       ├── CreateItemUseCase.swift
@@ -873,11 +923,10 @@ Features/Items/
 │       └── InMemoryItemsRepository.swift
 └── Presentation/
     ├── List/
-    │   ├── ItemsListViewController.swift
-    │   └── ItemsListViewModel.swift
+    │   ├── ListViewController.swift
+    │   └── ListViewModel.swift
     ├── Detail/
-    │   ├── DetailViewController.swift
-    │   └── ItemDetailViewModel.swift
+    │   └── DetailViewController.swift
     └── ItemEditor/
         ├── ItemEditorViewController.swift
         └── ItemEditorViewModel.swift
@@ -951,13 +1000,13 @@ ShellTests/
 │   │   │       └── InMemoryItemsRepositoryTests.swift
 │   │   └── Presentation/
 │   │       └── List/
-│   │           └── ItemsListViewModelTests.swift
+│   │           └── ListViewModelTests.swift
 │   └── Profile/
 │       ├── Domain/
 │       │   ├── Entities/
 │       │   │   └── IdentityTests.swift
 │       │   └── UseCases/
-│       │       └── SetupIdentityUseCaseTests.swift
+│       │       └── CompleteIdentitySetupUseCaseTests.swift
 │       └── Presentation/
 │           └── Editor/
 │               └── ProfileEditorViewModelTests.swift
@@ -1009,7 +1058,7 @@ final class CreateItemUseCaseTests: XCTestCase {
 ### Example: Repository Test (Thread Safety)
 
 ```swift
-// ShellTests/Features/Items/Infrastructure/Repositories/InMemoryItemsRepositoryTests.swift
+// Example actor-isolation repository test
 final class InMemoryItemsRepositoryTests: XCTestCase {
     func testConcurrentWrites() async throws {
         let repository = InMemoryItemsRepository()
@@ -1034,9 +1083,9 @@ final class InMemoryItemsRepositoryTests: XCTestCase {
 ### Example: ViewModel Test
 
 ```swift
-// ShellTests/Features/Items/Presentation/List/ItemsListViewModelTests.swift
+// ShellTests/Features/Items/Presentation/List/ListViewModelTests.swift
 @MainActor
-final class ItemsListViewModelTests: XCTestCase {
+final class ListViewModelTests: XCTestCase {
     func testLoadItemsSuccess() async {
         // Given
         let repository = InMemoryItemsRepository()
@@ -1044,7 +1093,7 @@ final class ItemsListViewModelTests: XCTestCase {
         try! await repository.create(item)
 
         let fetchUseCase = FetchItemsUseCase(repository: repository)
-        let viewModel = ItemsListViewModel(fetchItemsUseCase: fetchUseCase, ...)
+        let viewModel = ListViewModel(fetchItemsUseCase: fetchUseCase, ...)
 
         // When
         await viewModel.loadItems()
